@@ -1,3 +1,1 @@
-from . import ingredient
-
-__all__ = ["ingredient"]
+from . import food

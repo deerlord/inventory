@@ -1,6 +1,5 @@
-from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
-from sqlmodel import Session
+from sqlmodel import Session, create_engine
 
 from application.config.settings import Settings
 

@@ -19,7 +19,8 @@ class ReturnData(BaseModel):
 def init_db() -> bool:
     retval = False
     try:
-        SQLModel.metadata.create_all(database.engine())
+        engine = database.engine()
+        SQLModel.metadata.create_all(engine)
         retval = True
     except Exception as error:
         logging.exception(error)

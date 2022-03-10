@@ -39,7 +39,7 @@ class Item(Table):
         return (datetime.utcnow() - expires).days
 
 
-class Fresh(Item, table=True):
+class FreshItem(Item, table=True):
     pass
 
 
