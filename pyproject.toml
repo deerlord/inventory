@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "Gerald API"
+version = "0.1.0"
+description = "API Backend for Gerald"
+authors = ["Trent Dierking"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fastapi = "^0.75.0"
+sqlmodel = "^0.0.6"
+fastapi-crudrouter = "^0.8.5"
+uvicorn = "^0.17.5"
+
+[tool.poetry.dev-dependencies]
+black = "*"
+mypy = "*"
+pytest = "*"
+isort = "*"
+flake8 = "*"
+pytest-cov = "*"
