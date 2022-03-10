@@ -2,11 +2,7 @@ from functools import reduce
 from operator import mul, truediv
 from typing import List, Tuple
 
-DRY_MEASUREMENTS = [
-    (1, "tsp"),
-    (3, "tbsp"),
-    (16, "cup"),
-]
+DRY_MEASUREMENTS = [(1, "tsp"), (3, "tbsp"), (16, "cup")]
 
 
 LIQUID_MEASUREMENTS = [(1, "oz"), (8, "cup"), (2, "pint"), (2, "quart"), (4, "gallon")]
