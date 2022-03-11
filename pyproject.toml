@@ -10,6 +10,7 @@ fastapi = "^0.75.0"
 sqlmodel = "^0.0.6"
 fastapi-crudrouter = "^0.8.5"
 uvicorn = "^0.17.5"
+radon = "^5.1.0"
 
 [tool.poetry.dev-dependencies]
 black = "*"
@@ -18,3 +19,4 @@ pytest = "*"
 isort = "*"
 flake8 = "*"
 pytest-cov = "*"
+radon = "*"
