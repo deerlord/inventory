@@ -6,5 +6,5 @@ from application.router import generate_routers
 def setup_application():
     app = FastAPI()
     for router in generate_routers():
-        app.include_router(router, prefix="/api")
+        app.include_router(router)
     return app

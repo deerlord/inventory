@@ -1,8 +1,1 @@
-pip~=21.1.2
-wheel~=0.36.2
-setuptools~=57.0.0
-pydantic~=1.9.0
-greenlet~=1.1.2
-SQLAlchemy~=1.4.32
-sqlmodel~=0.0.6
-fastapi-crudrouter~=0.8.5
+poetry

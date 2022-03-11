@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Optional
 
-from pydantic import PositiveInt
+from pydantic import PositiveInt, conint
 from sqlmodel import Field
 
 from application.models.base import Table
@@ -39,17 +39,21 @@ class Item(Table):
         return (datetime.utcnow() - expires).days
 
 
+class StoredGood(Item):
+    count: conint(ge=0) = 0
+
+
 class FreshItem(Item, table=True):
     pass
 
 
-class CannedGood(Item, table=True):
+class CannedGood(StoredGood, table=True):
     pass
 
 
-class JarredGood(Item, table=True):
+class JarredGood(StoredGood, table=True):
     pass
 
 
-class BulkGood(Item, table=True):
+class BulkGood(StoredGood, table=True):
     pass
