@@ -40,7 +40,7 @@ class Item(Table):
 
 
 class StoredGood(Item):
-    count: conint(ge=0) = 0
+    count: conint(ge=0)  # type: ignore
 
 
 class FreshItem(Item, table=True):
