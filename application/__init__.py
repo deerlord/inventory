@@ -8,8 +8,8 @@ from application.config import setup
 from application.router import generate_routers, include_routers
 
 
-def setup_application():
-    results = setup.main()
+async def setup_application():
+    results = await setup.main()
     # TODO: parse results
     for name, result in results.dict().items():
         status = "COMPLETE" if result else "FAILED"

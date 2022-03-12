@@ -6,8 +6,8 @@ from sqlmodel import SQLModel
 from application.lib import database
 
 
-def main() -> "ReturnData":
-    db_done = init_db()
+async def main() -> "ReturnData":
+    db_done = await init_db()
     result = ReturnData(database=db_done)
     return result
 
