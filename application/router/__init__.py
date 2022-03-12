@@ -1,15 +1,15 @@
 from collections import Iterable
 from types import ModuleType
-from typing import Generator, Iterator, Type
+from typing import Generator, Iterator, Type, Union
 
-from fastapi import APIRouter
+from fastapi import APIRouter, FastAPI
 from fastapi_crudrouter import SQLAlchemyCRUDRouter  # type: ignore
 from sqlmodel import SQLModel
 
 from application import models
 from application.lib import database
 
-__all__ = ["generate_routers"]
+__all__ = ["generate_routers", "include_routers"]
 
 
 def generate_routers() -> Iterator[APIRouter]:
@@ -17,8 +17,8 @@ def generate_routers() -> Iterator[APIRouter]:
 
 
 def generate_router(package: ModuleType) -> APIRouter:
-    pkg_name = package.__name__.replace("application.models.", "").lower()
-    router = APIRouter(prefix=f"/{pkg_name}")
+    prefix = package.__name__.replace("application.models.", "").lower()
+    router = APIRouter(prefix=f"/{prefix}")
     crudrouters = map(crudrouter, data_models(package))
     include_routers(router, crudrouters)
     return router
@@ -37,9 +37,11 @@ def data_models(package: ModuleType) -> Iterator[Type[SQLModel]]:
     return filter(lambda m: hasattr(m, "__table__"), trimmed)
 
 
-def include_routers(router: APIRouter, subrouters: Iterable[APIRouter]) -> None:
-    for subrouter in subrouters:
-        router.include_router(subrouter)
+def include_routers(
+    top: Union[APIRouter, FastAPI], routers: Iterable[APIRouter]
+) -> None:
+    for routers in routers:
+        top.include_router(routers)
 
 
 def crudrouter(model: Type[SQLModel]) -> SQLAlchemyCRUDRouter:
