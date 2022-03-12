@@ -17,7 +17,6 @@ def setup_application():
         logging.info(f"{name}: [{status}]")
     app = FastAPI()
     include_routers(app, generate_routers())
-    middleware.acid_transaction(app)
     return app
 
 

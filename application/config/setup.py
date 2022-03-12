@@ -26,11 +26,3 @@ def init_db() -> bool:
         logging.exception(error)
     return retval
 
-
-if __name__ == "__main__":
-    results = main()
-    message = "".join(
-        f"{step.upper()}: [{'COMPLETE' if result else 'FAILED'}]\n"
-        for step, result in results.dict().items()
-    )
-    print(message)

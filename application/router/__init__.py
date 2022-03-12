@@ -8,6 +8,8 @@ from sqlmodel import SQLModel
 
 from application import models
 from application.lib import database
+from application.router.crudrouter import AsyncCRUDRouter
+
 
 __all__ = ["generate_routers", "include_routers"]
 
@@ -44,20 +46,17 @@ def include_routers(
         top.include_router(routers)
 
 
-def crudrouter(model: Type[SQLModel]) -> SQLAlchemyCRUDRouter:
-    return SQLAlchemyCRUDRouter(
+def crudrouter(model: Type[SQLModel]) -> AsyncCRUDRouter:
+    return AsyncCRUDRouter(
         schema=model,
         db_model=model,
-        db=db_conn,
+        db=database.connection,
         prefix=f"/{model.__name__}",
         tags=[f"{model.__name__}s"],
+        get_one_route=False,
+        create_route=False,
+        update_route=False,
+        delete_one_route=False,
+        delete_all_route=False
     )
 
-
-def db_conn() -> Generator[database.Session, None, None]:
-    _ = database.session()
-    try:
-        yield _
-        _.commit()
-    finally:
-        _.close()
