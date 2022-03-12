@@ -7,8 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from application.config.settings import Settings
 
 
-def connection_string():
-    settings = Settings()
+def connection_string(settings: Settings):
     strings = {
         "postgresql": (
             "postgresql://{database_username}:{database_password}"
@@ -20,7 +19,9 @@ def connection_string():
 
 
 def engine() -> AsyncEngine:
-    return create_async_engine(connection_string())
+    settings = Settings()
+    string = connection_string(settings)
+    return create_async_engine(string)
 
 
 session = sessionmaker(engine(), expire_on_commit=False, class_=AsyncSession)
