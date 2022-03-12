@@ -19,8 +19,10 @@ class ReturnData(BaseModel):
 async def init_db() -> bool:
     retval = False
     try:
-        async with database.engine().begin() as conn:
+        engine = database.engine()
+        async with engine.begin() as conn:
             await conn.run_sync(SQLModel.metadata.create_all)
+        await engine.dispose()
         retval = True
     except Exception as error:
         logging.exception(error)

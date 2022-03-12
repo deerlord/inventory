@@ -1,11 +1,8 @@
-import functools
 from sqlite3 import IntegrityError
-from typing import AsyncGenerator, Union, Type, overload
+from typing import AsyncGenerator
 
-from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlmodel import Session
+from sqlalchemy.orm import sessionmaker
 
 from application.config.settings import Settings
 
@@ -22,13 +19,11 @@ def connection_string():
     return strings[settings.database_protocol].format(**settings.dict())
 
 
-@functools.lru_cache(maxsize=2)
 def engine() -> AsyncEngine:
     return create_async_engine(connection_string())
 
 
-def session() -> AsyncSession:
-    return AsyncSession(engine())
+session = sessionmaker(engine(), expire_on_commit=False, class_=AsyncSession)
 
 
 async def connection() -> AsyncGenerator[AsyncSession, None]:
@@ -36,5 +31,5 @@ async def connection() -> AsyncGenerator[AsyncSession, None]:
         try:
             yield _
             await _.commit()
-        except IntegrityError as e:
+        except IntegrityError:  # TODO: do something exception?
             await _.rollback()

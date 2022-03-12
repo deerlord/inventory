@@ -1,1 +1,1 @@
-from . import food
+from . import food  # noqa: F401
