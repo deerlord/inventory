@@ -16,13 +16,12 @@ class ReturnData(BaseModel):
     database: bool
 
 
-def init_db() -> bool:
+async def init_db() -> bool:
     retval = False
     try:
-        engine = database.engine()
-        SQLModel.metadata.create_all(engine)
+        async with database.engine().begin() as conn:
+            await conn.run_sync(SQLModel.metadata.create_all)
         retval = True
     except Exception as error:
         logging.exception(error)
     return retval
-

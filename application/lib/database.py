@@ -1,30 +1,40 @@
 import functools
+from sqlite3 import IntegrityError
+from typing import AsyncGenerator, Union, Type, overload
 
+from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
-from sqlmodel import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
+from sqlmodel import Session
 
 from application.config.settings import Settings
-import asyncio
 
 
-ACID = asyncio.Lock()
-
-
-@functools.lru_cache(maxsize=1)
-def engine() -> Engine:
+def connection_string():
     settings = Settings()
-    return create_async_engine(f"{settings.database_protocol}://{settings.database_name}")
+    strings = {
+        "postgresql": (
+            "postgresql://{database_username}:{database_password}"
+            "@{database_hostname}:{database_port}/{database_name}"
+        ),
+        "sqlite": "sqlite://{database_name}",
+    }
+    return strings[settings.database_protocol].format(**settings.dict())
+
+
+@functools.lru_cache(maxsize=2)
+def engine() -> AsyncEngine:
+    return create_async_engine(connection_string())
 
 
 def session() -> AsyncSession:
     return AsyncSession(engine())
 
 
-async def connection() -> Generator[database.Session, None, None]:
-    async with ACID:
-        _ = database.session()
+async def connection() -> AsyncGenerator[AsyncSession, None]:
+    async with session() as _:
         try:
             yield _
-            _.commit()
-        finally:
-            _.close()
+            await _.commit()
+        except IntegrityError as e:
+            await _.rollback()
