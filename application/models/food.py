@@ -30,10 +30,6 @@ class Item(Table):
     lifetime: timedelta
 
     @property
-    def ingredient(self) -> Ingredient:
-        return Ingredient(id=self.ingredient_id)
-
-    @property
     def days_left(self) -> int:
         expires = self.packaged_on + self.lifetime
         return (datetime.utcnow() - expires).days

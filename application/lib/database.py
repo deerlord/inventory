@@ -1,6 +1,8 @@
 from sqlite3 import IntegrityError
 from typing import AsyncGenerator
 
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -13,7 +15,7 @@ def connection_string(settings: Settings):
             "postgresql://{database_username}:{database_password}"
             "@{database_hostname}:{database_port}/{database_name}"
         ),
-        "sqlite": "sqlite://{database_name}",
+        "sqlite": "sqlite+aiosqlite://{database_name}",
     }
     return strings[settings.database_protocol].format(**settings.dict())
 
@@ -31,6 +33,11 @@ async def connection() -> AsyncGenerator[AsyncSession, None]:
     async with session() as _:
         try:
             yield _
-            await _.commit()
         except IntegrityError:  # TODO: do something exception?
             await _.rollback()
+
+
+def sync_engine() -> Engine:
+    settings = Settings()
+    string = connection_string(settings)
+    return create_engine(string)

@@ -1,1 +1,1 @@
-from . import food  # noqa: F401
+from . import food, medicine  # noqa: F401

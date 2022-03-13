@@ -4,16 +4,10 @@ from typing import Callable, Optional
 
 from fastapi import FastAPI
 
-from application.config import setup
 from application.router import generate_routers, include_routers
 
 
-async def setup_application():
-    results = await setup.main()
-    # TODO: parse results
-    for name, result in results.dict().items():
-        status = "COMPLETE" if result else "FAILED"
-        logging.info(f"{name}: [{status}]")
+def setup_application():
     app = FastAPI()
     include_routers(app, generate_routers())
     return app

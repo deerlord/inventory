@@ -14,4 +14,4 @@ class Settings(BaseSettings):
     database_port: Optional[PositiveInt] = Field(env="DATABASE_PORT", default=None)
 
     class Config:
-        env_file = "" if strtobool(os.environ.get("DEBUG", "false")) else ""
+        env_file = f"./settings.{'prd' if strtobool(os.environ.get('DEBUG', 'false')) else 'dbg'}"

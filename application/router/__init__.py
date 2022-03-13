@@ -49,6 +49,5 @@ def crudrouter(model: Type[SQLModel]) -> AsyncCRUDRouter:
         db_model=model,
         db=database.connection,  # type: ignore
         prefix=f"/{model.__name__}",
-        tags=[f"{model.__name__}s"],
-        delete_all_route=False,
+        tags=[model.__name__],
     )
