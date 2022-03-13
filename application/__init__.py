@@ -1,13 +1,16 @@
+import asyncio
 import logging
 from dataclasses import dataclass
 from typing import Callable, Optional
 
 from fastapi import FastAPI
 
+from application.config import setup
 from application.router import generate_routers, include_routers
 
 
 def setup_application():
+    setup_results = asyncio.run(setup.main())
     app = FastAPI()
     include_routers(app, generate_routers())
     return app

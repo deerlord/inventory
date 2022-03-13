@@ -1,12 +1,12 @@
 from sqlite3 import IntegrityError
 from typing import AsyncGenerator
 
-from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from application.config.settings import Settings
+
+__all__ = ["engine", "connection"]
 
 
 def connection_string(settings: Settings):
@@ -26,9 +26,6 @@ def engine() -> AsyncEngine:
     return create_async_engine(string)
 
 
-session = sessionmaker(engine(), expire_on_commit=False, class_=AsyncSession)
-
-
 async def connection() -> AsyncGenerator[AsyncSession, None]:
     async with session() as _:
         try:
@@ -37,7 +34,4 @@ async def connection() -> AsyncGenerator[AsyncSession, None]:
             await _.rollback()
 
 
-def sync_engine() -> Engine:
-    settings = Settings()
-    string = connection_string(settings)
-    return create_engine(string)
+session = sessionmaker(engine(), expire_on_commit=False, class_=AsyncSession)

@@ -11,6 +11,7 @@ sqlmodel = "^0.0.6"
 fastapi-crudrouter = "^0.8.5"
 uvicorn = "^0.17.5"
 radon = "^5.1.0"
+pydantic = {extras = ["dotenv"], version = "^1.9.0"}
 
 [tool.poetry.dev-dependencies]
 black = "*"

@@ -29,11 +29,6 @@ class Item(Table):
     packaged_on: datetime
     lifetime: timedelta
 
-    @property
-    def days_left(self) -> int:
-        expires = self.packaged_on + self.lifetime
-        return (datetime.utcnow() - expires).days
-
 
 class StoredGood(Item):
     count: conint(ge=0)  # type: ignore

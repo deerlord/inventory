@@ -1,0 +1,2 @@
+DATABASE_PROTOCOL=sqlite
+DATABASE_NAME=/tests/data.sqlite
