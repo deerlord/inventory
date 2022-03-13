@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     database_password: Optional[str] = Field(env="DATABASE_PASSWORD", default=None)
     database_hostname: Optional[str] = Field(env="DATABASE_HOSTNAME", default=None)
     database_port: Optional[PositiveInt] = Field(env="DATABASE_PORT", default=None)
+    debug: bool = Field(env="DEBUG", default=False)
 
     class Config:
         env_file = f"./settings.{'prd' if strtobool(os.environ.get('DEBUG', 'false')) else 'dbg'}"

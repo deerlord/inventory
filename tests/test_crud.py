@@ -99,7 +99,6 @@ async def test_update(client):
     assert json["id"] == item_id
 
 
-@pytest.mark.asyncio
 async def make_several(c: AsyncClient, count: int = 10) -> list:
     data = []
     for item_id in range(1, count):

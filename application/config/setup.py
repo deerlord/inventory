@@ -3,10 +3,11 @@ import logging
 from pydantic import BaseModel
 from sqlmodel import SQLModel
 
-from application.lib import database
+from application.lib import database, logging
 
 
-async def main() -> "ReturnData":
+@logging.logger
+async def setup_services() -> "ReturnData":
     db_done = await init_db()
     result = ReturnData(database=db_done)
     return result
@@ -16,6 +17,7 @@ class ReturnData(BaseModel):
     database: bool
 
 
+@logging.logger
 async def init_db() -> bool:
     retval = False
     try:
