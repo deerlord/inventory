@@ -11,13 +11,13 @@ class Medicine(Table, table=True):
     name: str
 
 
-class Units(str, Enum):
+class Unit(str, Enum):
     mg = "mg"
 
 
 class Container(Table, table=True):
     medicine_id: int = Field(foreign_key="medicine.id")
     size: Optional[PositiveInt] = None
-    units: Optional[Units] = None
+    units: Optional[Unit] = None
     count: conint(ge=0)  # type: ignore
     max: PositiveInt = 1
