@@ -1,12 +1,9 @@
-import logging
-
 from pydantic import BaseModel
 from sqlmodel import SQLModel
 
-from application.lib import database, logging
+from application.lib import database
 
 
-@logging.logger
 async def setup_services() -> "ReturnData":
     db_done = await init_db()
     result = ReturnData(database=db_done)
@@ -17,14 +14,8 @@ class ReturnData(BaseModel):
     database: bool
 
 
-@logging.logger
 async def init_db() -> bool:
-    retval = False
-    try:
-        engine = database.engine()
-        async with engine.begin() as conn:
-            await conn.run_sync(SQLModel.metadata.create_all)
-        retval = True
-    except Exception as error:
-        logging.exception(error)
-    return retval
+    engine = database.engine()
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+    return True
