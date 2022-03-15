@@ -1,10 +1,10 @@
 from sqlite3 import IntegrityError
-from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from application.config.settings import Settings
+from application.lib import cache
 
 __all__ = ["engine", "connection"]
 
@@ -20,13 +20,14 @@ def connection_string(settings: Settings):
     return strings[settings.database_protocol].format(**settings.dict())
 
 
+@cache.singleton
 def engine() -> AsyncEngine:
     settings = Settings()
     string = connection_string(settings)
     return create_async_engine(string)
 
 
-async def connection() -> AsyncGenerator[AsyncSession, None]:
+async def connection():
     async with session() as _:
         try:
             yield _

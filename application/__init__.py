@@ -1,20 +1,26 @@
 import asyncio
-import logging as base_logger
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 
 from application.config import setup
 from application.config.settings import Settings
-from application.router import generate_routers, include_routers
+from application.router import generate_routers, include_routers, middleware
+from application.router._base import health_check
 
 
 def setup_application():
     settings = Settings()
     results = asyncio.run(setup.setup_services())
-    for service, success in results:
-        message = f"{service.upper()}: {'COMPLETED' if success else 'FAILED'}"
-        base_logger.info(message)
-    # TODO: parse/log results of setup.main()
+    if not bool(results):
+        message = ", ".join(results.failed_services)
+        raise Exception(f"Unable to set up the following services: {message}")
     app = FastAPI(debug=settings.debug)
-    include_routers(app, generate_routers())
+    api_router = APIRouter(prefix="/api")
+    include_routers(api_router, generate_routers())
+    app.include_router(api_router)
+
+    app.get("/health")(health_check)
+
+    middleware.log_request(app)
+
     return app

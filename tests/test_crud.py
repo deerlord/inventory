@@ -6,7 +6,7 @@ from httpx import AsyncClient
 
 from application import setup_application
 
-ENDPOINT = "/food/ingredient"
+ENDPOINT = "/api/food/ingredient"
 
 
 @pytest.fixture

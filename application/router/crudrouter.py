@@ -6,6 +6,8 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import SQLModel
 
+from application.lib import cache
+
 Model = SQLModel
 PAGINATION = Dict[str, Optional[int]]
 CALLABLE_LIST = Callable[..., Coroutine[Any, Any, List[Model]]]
@@ -15,6 +17,7 @@ SESSION = AsyncSession
 
 
 class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
+    @cache.singleton
     def _get_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
         async def route(
             pagination: PAGINATION = self.pagination,
@@ -32,6 +35,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
         return route
 
+    @cache.singleton
     def _get_one(self, *args: Any, **kwargs: Any) -> CALLABLE:
         async def route(
             item_id: self._pk_type, db: SESSION = Depends(self.db_func)  # type: ignore
@@ -46,6 +50,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
         return route
 
+    @cache.singleton
     def _create(self, *args: Any, **kwargs: Any) -> CALLABLE:
         async def route(
             model: self.create_schema,  # type: ignore
@@ -59,6 +64,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
         return route
 
+    @cache.singleton
     def _update(self, *args: Any, **kwargs: Any) -> CALLABLE:
         async def route(
             item_id: self._pk_type,  # type: ignore
@@ -79,6 +85,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
         return route
 
+    @cache.singleton
     def _delete_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
         async def route(db: SESSION = Depends(self.db_func)) -> List[Model]:
             await db.execute(delete(self.db_model))
@@ -89,6 +96,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
         return route
 
+    @cache.singleton
     def _delete_one(self, *args: Any, **kwargs: Any) -> CALLABLE:
         async def route(
             item_id: self._pk_type, db: SESSION = Depends(self.db_func)  # type: ignore
@@ -101,3 +109,6 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
             return db_model
 
         return route
+
+    def __hash__(self):
+        return hash(self.db_model)

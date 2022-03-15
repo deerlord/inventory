@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     database_password: Optional[str] = Field(env="DATABASE_PASSWORD", default=None)
     database_hostname: Optional[str] = Field(env="DATABASE_HOSTNAME", default=None)
     database_port: Optional[PositiveInt] = Field(env="DATABASE_PORT", default=None)
+    request_id_header: Optional[str] = Field(
+        env="REQUEST_ID_HEADER", default="MISSING_REQUEST_ID"
+    )
     debug: bool = Field(env="DEBUG", default=False)
 
     class Config:
