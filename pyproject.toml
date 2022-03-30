@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "Inventory API"
+name = "application"
 version = "0.1.0"
 description = "API for Inventory Access"
 authors = ["Trent Dierking"]
@@ -13,6 +13,7 @@ uvicorn = "^0.17.5"
 pydantic = {extras = ["dotenv"], version = "^1.9.0"}
 pytest-gevent = "^1.1.0"
 pytz = "^2021.3"
+aiosqlite = "^0.17.0"
 
 [tool.poetry.dev-dependencies]
 pylint = "^2.12.2"

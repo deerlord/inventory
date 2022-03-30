@@ -23,7 +23,7 @@ class Ingredient(Table, table=True):
 
 
 class Item(Table):
-    ingredient_id: int = Field(foreign_key="ingredient.id")
+    ingredient_id: PositiveInt = Field(foreign_key="ingredient.id")
     amount: PositiveInt
     units: Optional[Unit] = None
     packaged_on: datetime
