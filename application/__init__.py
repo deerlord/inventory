@@ -15,7 +15,7 @@ def setup_application():
         message = ", ".join(results.failed_services)
         raise Exception(f"Unable to set up the following services: {message}")
     app = FastAPI(debug=settings.debug)
-    api_router = APIRouter(prefix="/api")
+    api_router = APIRouter()
     include_routers(api_router, generate_routers())
     app.include_router(api_router)
 
