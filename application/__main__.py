@@ -10,11 +10,8 @@ if __name__ == "__main__":
     settings = Settings()
     app = setup_application()
     kwargs = {
-        "log_level": logging.INFO,
         "host": "localhost",
-        "port": 8000,
-        "reload": False,
-        "loop": "uvloop",
+        "port": 8001,
     }
     if settings.debug:
         kwargs.update({"reload": True, "log_level": logging.DEBUG})
