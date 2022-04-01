@@ -19,7 +19,7 @@ def setup_application():
     include_routers(api_router, generate_routers())
     app.include_router(api_router)
 
-    app.get("/health")(health_check)
+    app.get("/health", tags=["Health"])(health_check)
 
     middleware.log_request(app)
 

@@ -1,5 +1,5 @@
 from types import ModuleType
-from typing import Iterable, Iterator, Type, Union
+from typing import Iterable, Iterator, List, Type, Union
 
 from fastapi import APIRouter, FastAPI
 from sqlmodel import SQLModel
@@ -18,9 +18,20 @@ def generate_routers() -> Iterator[APIRouter]:
 def generate_router(package: ModuleType) -> APIRouter:
     prefix = package.__name__.replace("application.models.", "").lower()
     router = APIRouter(prefix=f"/{prefix}")
-    crudrouters = map(crudrouter, find_data_models(package))
+    data_models = list(find_data_models(package))
+    create_items_route(router, data_models)
+    crudrouters = map(crudrouter, data_models)
     include_routers(router, crudrouters)
     return router
+
+
+def create_items_route(router: APIRouter, data_models: List[Type[SQLModel]]):
+    names = [data_model.__name__ for data_model in data_models]
+    prefix = router.prefix[1:]
+
+    @router.get("", tags=["Items"], summary=f"Get {prefix.capitalize()} Items")
+    async def get_items() -> List[str]:
+        return names
 
 
 def find_packages() -> Iterator[ModuleType]:

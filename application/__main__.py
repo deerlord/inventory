@@ -1,4 +1,5 @@
 import logging
+import sys
 from copy import deepcopy
 
 import uvicorn  # type: ignore
@@ -9,9 +10,10 @@ from application.config.settings import Settings
 if __name__ == "__main__":
     settings = Settings()
     app = setup_application()
+    port = sys.argv[1]
     kwargs = {
         "host": "localhost",
-        "port": 8001,
+        "port": port,
     }
     if settings.debug:
         kwargs.update({"reload": True, "log_level": logging.DEBUG})
