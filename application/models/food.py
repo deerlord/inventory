@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Optional
 
-from pydantic import conint, PositiveInt
+from pydantic import PositiveInt, conint
 from sqlmodel import Field
 
 from application.models._base import Table
@@ -23,7 +23,9 @@ class Ingredient(Table, table=True):
 
 
 class Item(Table):
-    ingredient_id: Optional[PositiveInt] = Field(default=None, foreign_key="ingredient.id")
+    ingredient_id: Optional[PositiveInt] = Field(
+        default=None, foreign_key="ingredient.id"
+    )
     amount: int = 0
     units: Optional[Unit] = None
     packaged_on: Optional[datetime] = None

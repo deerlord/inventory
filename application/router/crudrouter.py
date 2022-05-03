@@ -2,7 +2,6 @@ from typing import Any, Callable, Coroutine, Dict, List, Optional, Type
 
 from fastapi import Depends, HTTPException
 from fastapi_crudrouter import SQLAlchemyCRUDRouter  # type: ignore
-from pydantic import create_model
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import SQLModel
