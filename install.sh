@@ -9,7 +9,7 @@ set -euo pipefail
 ./venv/bin/pip install -e .
 # system setup
 sudo useradd -r --home /opt/inventory inventory
-sudo chown -R tasker. /opt/inventory
+sudo chown -R inventory. /opt/inventory
 sudo chmod -R g-rwx,o-rwx /opt/inventory
 sudo cp systemd/inventory.service /etc/systemd/system/
 sudo systemctl start inventory
