@@ -16,6 +16,9 @@ SESSION = AsyncSession
 
 
 class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
+    def __init__(self, model: Type[Model], db: Callable, prefix: str, tags=list[str]):
+        super().__init__(schema=model, db_model=model, db=db, prefix=prefix, tags=tags)
+        
     def _get_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
         async def route(
             pagination: PAGINATION = self.pagination,
