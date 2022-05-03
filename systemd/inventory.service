@@ -1,0 +1,12 @@
+[Unit]
+After=network.target
+
+[Service]
+User=inventory
+Group=inventory
+WorkingDirectory=/opt/inventory
+ExecStart=/opt/inventory/venv/bin/python application
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

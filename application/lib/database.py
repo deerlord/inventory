@@ -31,7 +31,7 @@ async def connection():
     async with session() as _:
         try:
             yield _
-        except IntegrityError:  # TODO: do something exception?
+        except IntegrityError:  # TODO: do something with exception?
             await _.rollback()
 
 

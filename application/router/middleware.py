@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Request
+import logging
+import re
 
-from application.config.settings import Settings
-from application.lib import logger
+from fastapi import FastAPI, HTTPException, Request
 
 
 def example(app: FastAPI):
@@ -11,15 +11,37 @@ def example(app: FastAPI):
         return response
 
 
-# TODO: understand middleware and order of ops better
-def log_request(app: FastAPI):
+def testing(app: FastAPI):
     @app.middleware("http")
     async def middleware(request: Request, call_next):
-        request_id = request.headers.get(str(Settings().request_id_header))
-        logger.log_request(request, request_id)
+        print("middleware")
         response = await call_next(request)
-        logger.log_response(response, request_id)
+        if response.status_code == 200:
+            print("success")
+            async for x in response.body_iterator:
+                print("x", x)
         return response
+
+
+def log(app: FastAPI):
+    logger = logging.getLogger("requests")
+
+    @app.middleware("http")
+    async def middleware(request: Request, call_next):
+        request_id = request.headers.get("X-Request-ID")
+        logger.info(
+            "%(request_id)s - %(method)s %(url)",
+            request_id=request_id,
+            method=request.method,
+            url=request.url,
+        )
+        try:
+            result = await call_next(request)
+            logger.info("%(request_id)s - COMPLETED", request_id=request_id)
+            return result
+        except Exception:
+            logger.exception("%(request_id)s - FAILED", request_id=request_id)
+        raise HTTPException(500)
 
 
 def ensure_request_id(app: FastAPI):

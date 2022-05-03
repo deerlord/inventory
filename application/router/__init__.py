@@ -18,25 +18,14 @@ def generate_routers() -> Iterator[APIRouter]:
 def generate_router(package: ModuleType) -> APIRouter:
     prefix = package.__name__.replace("application.models.", "").lower()
     router = APIRouter(prefix=f"/{prefix}")
-    data_models = list(find_data_models(package))
-    create_items_route(router, data_models)
-    crudrouters = map(crudrouter, data_models)
-    include_routers(router, crudrouters)
+    routers = map(crudrouter, find_data_models(package))
+    include_routers(router, routers)
     return router
-
-
-def create_items_route(router: APIRouter, data_models: List[Type[SQLModel]]):
-    names = [data_model.__name__ for data_model in data_models]
-    prefix = router.prefix[1:]
-
-    @router.get("", tags=["Items"], summary=f"Get {prefix.capitalize()} Items")
-    async def get_items() -> List[str]:
-        return names
 
 
 def find_packages() -> Iterator[ModuleType]:
     for pkg in dir(models):
-        if not pkg.startswith("_") and pkg != "base":
+        if not pkg.startswith("_"):
             yield getattr(models, pkg)
 
 
@@ -56,8 +45,7 @@ def include_routers(
 
 def crudrouter(model: Type[SQLModel]) -> AsyncCRUDRouter:
     return AsyncCRUDRouter(
-        schema=model,
-        db_model=model,
+        model=model,
         db=database.connection,  # type: ignore
         prefix=f"/{model.__name__}",
         tags=[model.__name__],

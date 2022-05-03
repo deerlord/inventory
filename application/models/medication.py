@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import PositiveInt, conint
 from sqlmodel import Field
 
-from application.models.base import Table
+from application.models._base import Table
 
 
 class Medicine(Table, table=True):
@@ -16,7 +16,7 @@ class Unit(str, Enum):
 
 
 class Container(Table, table=True):
-    medicine_id: int = Field(foreign_key="medicine.id")
+    medicine_id: Optional[PositiveInt] = Field(default=None, foreign_key="medicine.id")
     size: Optional[PositiveInt] = None
     units: Optional[Unit] = None
     count: conint(ge=0)  # type: ignore
