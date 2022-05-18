@@ -1,10 +1,12 @@
-from typing import Any, Callable, Coroutine, Optional, Type
+from typing import Any, Callable, Coroutine, Optional, Type, Union, TypeAlias
 
+from blib2to3.pytree import TypeVar
 from fastapi import Depends, HTTPException
 from fastapi_crudrouter import SQLAlchemyCRUDRouter  # type: ignore
-from pydantic import create_model
+from pydantic import BaseModel, create_model
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import Delete, Select
 from sqlmodel import SQLModel
 
 Model = SQLModel
@@ -13,14 +15,15 @@ CALLABLE_LIST = Callable[..., Coroutine[Any, Any, list[Model]]]
 CALLABLE = Callable[..., Coroutine[Any, Any, Model]]
 NOT_FOUND = HTTPException(404, "Item not found")
 SESSION = AsyncSession
+T = TypeVar("T", Select, Delete)
 
 
 class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
     def __init__(self, model: Type[Model], db: Callable, prefix: str, tags=list[str]):
         fields = {
             field.name: (Optional[field.type_], None)
-            for field in self.db_model.__fields__.values()
-            if field.name != self._pk
+            for field in model.__fields__.values()
+            if field.name != "id"
         }
         # error: No overload variant of "create_model" matches argument types "str", "Dict[Any, Tuple[object, None]]"
         # despite the "no overload" error, this is absolutely valid and seems to be
@@ -36,21 +39,18 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
     def _get_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
         params_model = self._search_model
+        data_model = type(self.db_model)
 
         async def route(
             # error: Variable "params_model" is not valid as a type
             # this works in the OpenAPI documentation though
-            params: params_model = Depends(),  # type: ignore
+            params: params_model = Depends(),
             pagination: PAGINATION = self.pagination,
             db: SESSION = Depends(self.db_func),
-        ) -> list[Model]:
+        ) -> list[data_model]:
             skip, limit = pagination.get("skip"), pagination.get("limit")
-            statement = select(self.db_model)
-            # error: params_model? has no attribute "dict"
-            # as this is an instance of params_model it must have a .dict() method
-            for key, value in params.dict().items():  # type: ignore
-                if value is not None:  # prevents nullable field searches
-                    statement = statement.where(getattr(self.db_model, key) == value)
+            init = select(self.db_model)
+            statement: Select = self._search_statement(params, init)
             statement = (
                 statement.order_by(getattr(self.db_model, self._pk))
                 .limit(limit)
@@ -62,9 +62,11 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         return route
 
     def _get_one(self, *args: Any, **kwargs: Any) -> CALLABLE:
+        data_model = self.db_model
+
         async def route(
             item_id: self._pk_type, db: SESSION = Depends(self.db_func)  # type: ignore
-        ) -> Model:
+        ) -> data_model:
             statement = select(self.db_model).where(
                 getattr(self.db_model, self._pk) == item_id
             )
@@ -77,11 +79,13 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         return route
 
     def _create(self, *args: Any, **kwargs: Any) -> CALLABLE:
+        data_model = self.db_model
+
         async def route(
             model: self.create_schema,  # type: ignore
             db: SESSION = Depends(self.db_func),
-        ) -> Model:
-            db_model: Model = self.db_model(**model.dict())
+        ) -> data_model:
+            db_model = self.db_model(**model.dict())
             db.add(db_model)
             await db.commit()
             await db.refresh(db_model)
@@ -90,13 +94,15 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         return route
 
     def _update(self, *args: Any, **kwargs: Any) -> CALLABLE:
+        data_model = self.db_model
+
         async def route(
             item_id: self._pk_type,  # type: ignore
             model: self.update_schema,  # type: ignore
             db: SESSION = Depends(self.db_func),
-        ) -> Model:
+        ) -> data_model:
             coro = self._get_one()
-            db_model: Model = await coro(item_id, db)
+            db_model = await coro(item_id, db)
 
             for key, value in model.dict(exclude={self._pk}).items():
                 if hasattr(db_model, key):
@@ -111,14 +117,13 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
     def _delete_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
         params_model = self._search_model
+        data_model = self.db_model
 
         async def route(
             params: params_model = Depends(), db: SESSION = Depends(self.db_func)
-        ) -> list[Model]:
-            statement = delete(self.db_model)
-            for key, value in params.dict().items():  # type: ignore
-                if value is not None:  # prevents nullable field searches
-                    statement = statement.where(getattr(self.db_model, key) == value)
+        ) -> list[data_model]:
+            init = delete(self.db_model)
+            statement = self._search_statement(params, init)
             await db.execute(statement)
             await db.commit()
 
@@ -128,11 +133,13 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         return route
 
     def _delete_one(self, *args: Any, **kwargs: Any) -> CALLABLE:
+        data_model = self.db_model
+
         async def route(
             item_id: self._pk_type, db: SESSION = Depends(self.db_func)  # type: ignore
-        ) -> Model:
+        ) -> data_model:
             coro = self._get_one()
-            db_model: Model = await coro(item_id, db)
+            db_model = await coro(item_id, db)
             await db.delete(db_model)
             await db.commit()
 
@@ -142,3 +149,13 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
     def __hash__(self):
         return hash(self.db_model)
+
+    def _search_statement(
+        self, params: BaseModel, statement: Union[Select, Delete]
+    ) -> Union[Select, Delete]:
+        retval = statement
+        for key, value in params.dict().items():
+            if value is not None:
+                attr = getattr(self.db_model, key)
+                retval = retval.where(attr == key)
+        return retval
