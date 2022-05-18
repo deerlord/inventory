@@ -9,9 +9,13 @@ class RemoteDevice(Table):
     location: str
     ipv4: Optional[IPv4Address]
     ipv6: Optional[IPv6Address]
-    latitude: float
-    longitude: float
+    latitude: Optional[float]
+    longitude: Optional[float]
 
 
 class Sensor(RemoteDevice, table=True):
     ...
+
+
+class Switch(RemoteDevice, table=True):
+    state: bool

@@ -9,7 +9,7 @@ def crud_router(prefix: str = "/crud") -> APIRouter:
     router = APIRouter(prefix=prefix)
     for package in libmodels.find_packages():
         prefix = package.__name__.replace("application.models.", "").lower()
-        pkg_router = APIRouter(prefix=prefix)
+        pkg_router = APIRouter(prefix=f"/{prefix}")
         for model in libmodels.find_data_models(package):
             crud = AsyncCRUDRouter(
                 model=model,

@@ -2,6 +2,7 @@ from typing import Any, Callable, Coroutine, Dict, List, Optional, Type
 
 from fastapi import Depends, HTTPException
 from fastapi_crudrouter import SQLAlchemyCRUDRouter  # type: ignore
+from pydantic import create_model
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import SQLModel
@@ -25,14 +26,32 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         )
 
     def _get_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
+        fields = {
+            field.name: (Optional[field.type_], None)
+            for field in self.db_model.__fields__.values()
+            if field.name != self._pk
+        }
+        # error: No overload variant of "create_model" matches argument types "str", "Dict[Any, Tuple[object, None]]"
+        # despite the "no overload" error, this is absolutely valid and seems to be
+        # how the function is dynamically used
+        params_model = create_model("Params", **fields)  # type: ignore
+
         async def route(
+            # error: Variable "params_model" is not valid as a type
+            # this works in the OpenAPI documentation though
+            params: params_model = Depends(),  # type: ignore
             pagination: PAGINATION = self.pagination,
             db: SESSION = Depends(self.db_func),
         ) -> List[Model]:
             skip, limit = pagination.get("skip"), pagination.get("limit")
+            statement = select(self.db_model)
+            # error: params_model? has no attribute "dict"
+            # as this is an instance of params_model it must have a .dict() method
+            for key, value in params.dict().items():  # type: ignore
+                if value is not None:
+                    statement = statement.where(getattr(self.db_model, key) == value)
             statement = (
-                select(self.db_model)
-                .order_by(getattr(self.db_model, self._pk))
+                statement.order_by(getattr(self.db_model, self._pk))
                 .limit(limit)
                 .offset(skip)
             )
