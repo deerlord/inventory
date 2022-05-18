@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from pydantic import BaseModel
 from sqlmodel import SQLModel
@@ -16,7 +15,7 @@ class ReturnData(BaseModel):
     database: bool
 
     @property
-    def failed_services(self) -> List[str]:
+    def failed_services(self) -> list[str]:
         return [service for service, success in self.dict().items() if not success]
 
     def __str__(self):
