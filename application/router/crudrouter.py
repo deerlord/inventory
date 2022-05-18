@@ -17,6 +17,15 @@ SESSION = AsyncSession
 
 class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
     def __init__(self, model: Type[Model], db: Callable, prefix: str, tags=list[str]):
+        fields = {
+            field.name: (Optional[field.type_], None)
+            for field in self.db_model.__fields__.values()
+            if field.name != self._pk
+        }
+        # error: No overload variant of "create_model" matches argument types "str", "Dict[Any, Tuple[object, None]]"
+        # despite the "no overload" error, this is absolutely valid and seems to be
+        # how the function is dynamically used
+        self._search_model = create_model(f"Search{model.__name__.capitalize()}", **fields)  # type: ignore
         super().__init__(
             schema=model,
             db_model=model,
@@ -26,15 +35,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         )
 
     def _get_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
-        fields = {
-            field.name: (Optional[field.type_], None)
-            for field in self.db_model.__fields__.values()
-            if field.name != self._pk
-        }
-        # error: No overload variant of "create_model" matches argument types "str", "Dict[Any, Tuple[object, None]]"
-        # despite the "no overload" error, this is absolutely valid and seems to be
-        # how the function is dynamically used
-        params_model = create_model("Params", **fields)  # type: ignore
+        params_model = self._search_model
 
         async def route(
             # error: Variable "params_model" is not valid as a type
@@ -109,8 +110,16 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         return route
 
     def _delete_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
-        async def route(db: SESSION = Depends(self.db_func)) -> list[Model]:
-            await db.execute(delete(self.db_model))
+        params_model = self._search_model
+
+        async def route(
+            params: params_model = Depends(), db: SESSION = Depends(self.db_func)
+        ) -> list[Model]:
+            statement = delete(self.db_model)
+            for key, value in params.dict().items():  # type: ignore
+                if value is not None:  # prevents nullable field searches
+                    statement = statement.where(getattr(self.db_model, key) == value)
+            await db.execute(statement)
             await db.commit()
 
             coro = self._get_all()
