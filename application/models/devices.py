@@ -12,6 +12,10 @@ class RemoteDevice(Table):
     latitude: Optional[float]
     longitude: Optional[float]
 
+    @property
+    def identifier(self) -> str:
+        return f"{self.location}::{self.name}"
+
 
 class Sensor(RemoteDevice, table=True):
     ...

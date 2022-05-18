@@ -48,7 +48,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
             # error: params_model? has no attribute "dict"
             # as this is an instance of params_model it must have a .dict() method
             for key, value in params.dict().items():  # type: ignore
-                if value is not None:
+                if value is not None:  # prevents nullable field searches
                     statement = statement.where(getattr(self.db_model, key) == value)
             statement = (
                 statement.order_by(getattr(self.db_model, self._pk))
