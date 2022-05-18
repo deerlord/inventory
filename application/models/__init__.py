@@ -1,1 +1,1 @@
-from . import food, medication, sensors  # noqa: F401
+from . import devices, food, medication  # noqa: F401

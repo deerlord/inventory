@@ -1,7 +1,4 @@
-import logging
-import re
-
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 
 
 def example(app: FastAPI):

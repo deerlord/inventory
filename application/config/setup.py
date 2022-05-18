@@ -38,3 +38,4 @@ async def init_database():
 
 def logger():
     requests = logging.getLogger("requests")
+    return requests

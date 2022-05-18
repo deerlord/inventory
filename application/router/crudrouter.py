@@ -16,7 +16,13 @@ SESSION = AsyncSession
 
 class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
     def __init__(self, model: Type[Model], db: Callable, prefix: str, tags=list[str]):
-        super().__init__(schema=model, db_model=model, db=db, prefix=prefix, tags=tags)
+        super().__init__(
+            schema=model,
+            db_model=model,
+            db=db,
+            prefix=prefix,
+            tags=tags,
+        )
 
     def _get_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
         async def route(
@@ -24,13 +30,13 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
             db: SESSION = Depends(self.db_func),
         ) -> List[Model]:
             skip, limit = pagination.get("skip"), pagination.get("limit")
-
-            results = await db.execute(
+            statement = (
                 select(self.db_model)
                 .order_by(getattr(self.db_model, self._pk))
                 .limit(limit)
                 .offset(skip)
             )
+            results = await db.execute(statement)
             return results.scalars().all()
 
         return route
@@ -39,9 +45,10 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         async def route(
             item_id: self._pk_type, db: SESSION = Depends(self.db_func)  # type: ignore
         ) -> Model:
-            results = await db.execute(
-                select(self.db_model).where(getattr(self.db_model, self._pk) == item_id)
+            statement = select(self.db_model).where(
+                getattr(self.db_model, self._pk) == item_id
             )
+            results = await db.execute(statement)
             items = results.scalars().all()
             if len(items) == 0:
                 raise NOT_FOUND from None
