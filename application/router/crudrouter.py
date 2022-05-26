@@ -1,6 +1,5 @@
-from typing import Any, Callable, Coroutine, Optional, Type, Union, TypeAlias
+from typing import Any, Callable, Coroutine, Optional, Type, Union
 
-from blib2to3.pytree import TypeVar
 from fastapi import Depends, HTTPException
 from fastapi_crudrouter import SQLAlchemyCRUDRouter  # type: ignore
 from pydantic import BaseModel, create_model
@@ -15,7 +14,6 @@ CALLABLE_LIST = Callable[..., Coroutine[Any, Any, list[Model]]]
 CALLABLE = Callable[..., Coroutine[Any, Any, Model]]
 NOT_FOUND = HTTPException(404, "Item not found")
 SESSION = AsyncSession
-T = TypeVar("T", Select, Delete)
 
 
 class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
@@ -49,7 +47,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
             db: SESSION = Depends(self.db_func),
         ) -> list[data_model]:
             skip, limit = pagination.get("skip"), pagination.get("limit")
-            init = select(self.db_model)
+            init: Select = select(self.db_model)
             statement: Select = self._search_statement(params, init)
             statement = (
                 statement.order_by(getattr(self.db_model, self._pk))
@@ -122,7 +120,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         async def route(
             params: params_model = Depends(), db: SESSION = Depends(self.db_func)
         ) -> list[data_model]:
-            init = delete(self.db_model)
+            init: Delete = delete(self.db_model)
             statement = self._search_statement(params, init)
             await db.execute(statement)
             await db.commit()

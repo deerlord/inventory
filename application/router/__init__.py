@@ -5,8 +5,8 @@ from application.lib import models as libmodels
 from application.router.crudrouter import AsyncCRUDRouter
 
 
-def crud_router(prefix: str = "/crud") -> APIRouter:
-    router = APIRouter(prefix=prefix)
+def crud_router() -> APIRouter:
+    router = APIRouter()
     for package in libmodels.find_packages():
         prefix = package.__name__.replace("application.models.", "").lower()
         pkg_router = APIRouter(prefix=f"/{prefix}")

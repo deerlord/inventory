@@ -1,25 +1,21 @@
-from ipaddress import IPv4Address, IPv6Address
+from ipaddress import IPv4Address
 from typing import Optional
+
+from pydantic import validator
 
 from application.models._base import Table
 
 
-class RemoteDevice(Table):
+class RemoteDevice(Table, table=True):
     name: str
     location: str
-    ipv4: Optional[IPv4Address]
-    ipv6: Optional[IPv6Address]
+    ipaddress: IPv4Address
     latitude: Optional[float]
     longitude: Optional[float]
+    input_type: str
 
-    @property
-    def identifier(self) -> str:
-        return f"{self.location}::{self.name}"
-
-
-class Sensor(RemoteDevice, table=True):
-    ...
-
-
-class Switch(RemoteDevice, table=True):
-    state: bool
+    @validator("input_type")
+    def _input_type(cls, v):
+        if v not in {"digital", "analog"}:
+            raise Exception()
+        return v
