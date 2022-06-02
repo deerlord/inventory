@@ -5,7 +5,7 @@ After=network.target
 User=inventory
 Group=inventory
 WorkingDirectory=/opt/inventory
-ExecStart=/opt/inventory/venv/bin/python application
+ExecStart=/opt/inventory/venv/bin/python application localhost {{ listen_port }}
 Restart=on-failure
 
 [Install]

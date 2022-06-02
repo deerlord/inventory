@@ -1,14 +1,18 @@
+import sys
+
 import uvicorn  # type: ignore
 
 from application import setup_application
-from application.config.settings import Settings
+from application.settings import Settings
 
 if __name__ == "__main__":
+    host = str(sys.argv[1])
+    port = int(sys.argv[2])
     settings = Settings()
     app = setup_application()
     kwargs = {
-        "host": "localhost",
-        "port": 8001,
+        "host": host,
+        "port": port,
         "loop": "uvloop",
         "log_level": settings.log_level.lower(),
     }

@@ -1,0 +1,39 @@
+---
+- name: Install Inventory Microservice
+  hosts: localhost
+  remote_user: root
+  install_directory: /opt/"{{ service_name }}"
+
+  tasks:
+  - name: Create Group
+    group:
+      state: present
+      name: "{{ service_name }}"
+      system: true
+  - name: Create User
+    user:
+      state: present
+      name: "{{ service_name }}"
+      system: true
+      group: "{{ service_name }}"
+      shell: /bin/bash
+      create_home: true
+      home: "{{ install_directory }}"
+  - name: Python Environment
+    command:
+      cmd: /opt/python/bin/python -m venv "{{ install_directory }}"/venv
+  - name: Install Requirements
+    pip:
+      requirements: "{{ install_directory }}"/requirements.txt
+      virtualenv: "{{ install_directory }}"/venv
+  - name: Install Dependencies
+    command:
+      cmd: "{{ install_directory }}"/venv/bin/poetry build
+  - name: Install Application
+    command:
+      cmd: "{{ install_directory }}"/venv/bin/pip install -e .
+  - name: SystemD Service
+    template:
+      src: "{{ install_directory }}"/systemd/"{{ service_name }}".service.j2
+      dest: /etc/systemd/system/"{{ serivce_name }}".service
+

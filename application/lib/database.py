@@ -3,8 +3,8 @@ from sqlite3 import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from application.config.settings import Settings
 from application.lib import cache
+from application.settings import Settings
 
 __all__ = ["engine", "connection"]
 
