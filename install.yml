@@ -1,8 +1,10 @@
 ---
-- name: Install Inventory Microservice
+- name: Install {{ service_name|capitalize }} Microservice
   hosts: localhost
   remote_user: root
-  install_directory: /opt/"{{ service_name }}"
+  vars:
+    install_path: "/opt/{{ service_name }}"
+    venv_path: "{{ install_path }}/venv"
 
   tasks:
   - name: Create Group
@@ -18,22 +20,27 @@
       group: "{{ service_name }}"
       shell: /bin/bash
       create_home: true
-      home: "{{ install_directory }}"
-  - name: Python Environment
+      home: "{{ install_path }}"
+  - name: Python Virtual Env
     command:
-      cmd: /opt/python/bin/python -m venv "{{ install_directory }}"/venv
-  - name: Install Requirements
-    pip:
-      requirements: "{{ install_directory }}"/requirements.txt
-      virtualenv: "{{ install_directory }}"/venv
+      cmd: /opt/python/bin/python -m venv "{{ venv_path }}"
+  - name: Ensure Poetry
+    command:
+      cmd: "{{ venv_path }}/bin/pip install poetry"
   - name: Install Dependencies
     command:
-      cmd: "{{ install_directory }}"/venv/bin/poetry build
-  - name: Install Application
+      cmd: "{{ venv_path }}/bin/poetry build"
+  - name: Install Package
     command:
-      cmd: "{{ install_directory }}"/venv/bin/pip install -e .
-  - name: SystemD Service
+      cmd: "{{ venv_path }}/bin/pip install -e ."
+  - name: Install Service
     template:
-      src: "{{ install_directory }}"/systemd/"{{ service_name }}".service.j2
-      dest: /etc/systemd/system/"{{ serivce_name }}".service
+      src: systemd/inventory.service.j2
+      dest: /etc/systemd/system/inventory.service
+  - name: Enable Service
+    systemd:
+      state: started
+      enabled: yes
+      name: inventory
+
 
