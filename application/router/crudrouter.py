@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Delete, Select
 from sqlmodel import SQLModel
 
-
 Model = SQLModel
 PAGINATION = dict[str, Optional[int]]
 CALLABLE_LIST = Callable[..., Coroutine[Any, Any, list[Model]]]
