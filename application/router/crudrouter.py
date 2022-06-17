@@ -167,6 +167,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         if params:
             for key, value in params.dict().items():
                 field = self._search_model.__fields__[key]
+                # TODO: improve this check, as we might need to use default_factory for something
                 conditions = (
                     (field.allow_none is True) is (field.default is None),
                     field.default_factory is None,
