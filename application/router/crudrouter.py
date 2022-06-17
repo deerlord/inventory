@@ -14,8 +14,6 @@ CALLABLE_LIST = Callable[..., Coroutine[Any, Any, list[Model]]]
 CALLABLE = Callable[..., Coroutine[Any, Any, Model]]
 NOT_FOUND = HTTPException(404, "Item not found")
 SESSION = AsyncSession
-DT = TypeVar("DT")
-PT = TypeVar("PT")
 ST = TypeVar("ST", Select, Delete)
 
 
@@ -44,14 +42,20 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
     def _queries(self):
         return self._search_model
 
-    @staticmethod
     async def _get_one_query(
-        db_model: DT,
-        primary_key: str,
-        item_id: Any,
+        self,
         db: SESSION,
-    ) -> DT:
-        statement = select(db_model).where(getattr(db_model, primary_key) == item_id)
+        item_id: Optional[int] = None,
+        params: Optional[BaseModel] = None,
+    ) -> SQLModel:
+        statement = select(self.db_model)
+        if item_id:
+            statement = statement.where(getattr(self.db_model, self._pk) == item_id)
+        elif params:
+            statement = self._where_clause(statement, params)
+        else:
+            message = f"No item_id or params specified to query for model {self.db_model.__name__}."
+            raise Exception(message)
         results = await db.execute(statement)
         items = results.scalars().all()
         if len(items) == 0:
@@ -60,12 +64,13 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
     async def _get_many_query(
         self,
-        db_model: DT,
         db: SESSION,
         skip: Optional[int] = 0,
-        limit: Optional[int] = 0,
-    ) -> list[DT]:
-        statement = select(db_model)
+        limit: Optional[int] = None,
+        params: Optional[BaseModel] = None,
+    ) -> list[SQLModel]:
+        statement = select(self.db_model)
+        statement = self._where_clause(statement, params)
         statement = (
             statement.order_by(getattr(self.db_model, self._pk))
             .limit(limit)
@@ -78,13 +83,13 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         async def route(
             # error: Variable "params_model" is not valid as a type
             # this works in the OpenAPI documentation though
-            params: BaseModel = Depends(self._queries),
+            params: BaseModel = Depends(self._search_model),
             pagination: PAGINATION = self.pagination,
             db: SESSION = Depends(self.db_func),
-        ) -> list[DT]:
+        ):
             skip, limit = pagination.get("skip"), pagination.get("limit")
-            results = await self._get_many_query(self.db_model, db, skip, limit)
-            return results
+            result = await self._get_many_query(db, skip, limit)
+            return result
 
         return route
 
@@ -92,8 +97,8 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         async def route(
             item_id: self._pk_type,  # type: ignore
             db: SESSION = Depends(self.db_func),
-        ) -> DT:
-            result = await self._get_one_query(self.db_model, self._pk, item_id, db)
+        ):
+            result = await self._get_one_query(db, item_id=item_id)
             return result
 
         return route
@@ -102,8 +107,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         async def route(
             model: self.create_schema,  # type: ignore
             db: SESSION = Depends(self.db_func),
-            _data_model: DT = self.db_model,
-        ) -> DT:
+        ):
             db_model = self.db_model(**model.dict())
             db.add(db_model)
             await db.commit()
@@ -117,8 +121,8 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
             item_id: self._pk_type,  # type: ignore
             model: self.update_schema,  # type: ignore
             db: SESSION = Depends(self.db_func),
-        ) -> DT:
-            db_model = await self._get_one_query(self.db_model, self._pk, item_id, db)
+        ):
+            db_model = await self._get_one_query(db, item_id=item_id)
 
             for key, value in model.dict(exclude={self._pk}).items():
                 if hasattr(db_model, key):
@@ -133,24 +137,24 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
     def _delete_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
         async def route(
-            params: BaseModel = Depends(),
+            params: BaseModel = Depends(self._search_model),
             db: SESSION = Depends(self.db_func),
-        ) -> list[DT]:
+        ):
             statement = delete(self.db_model)
             statement = self._where_clause(statement, params)
             await db.execute(statement)
             await db.commit()
 
-            result = await self._get_many_query(self.db_model, db, 0, None)
+            result = await self._get_many_query(db)
             return result
 
         return route
 
     def _delete_one(self, *args: Any, **kwargs: Any) -> CALLABLE:
         async def route(
-            item_id: self._pk_type, db: SESSION = Depends(self.db_func), _data_model: DT = self.db_model  # type: ignore
-        ) -> DT:
-            db_model = await self._get_one_query(self.db_model, self._pk, item_id, db)
+            item_id: self._pk_type, db: SESSION = Depends(self.db_func)  # type: ignore
+        ):
+            db_model = await self._get_one_query(db, item_id=item_id)
             await db.delete(db_model)
             await db.commit()
 
@@ -158,23 +162,20 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
         return route
 
-    def __hash__(self):
-        return hash(self.db_model)
-
-    def _where_clause(self, statement: ST, params: Optional[PT] = None) -> ST:
+    def _where_clause(self, statement: ST, params: Optional[BaseModel] = None) -> ST:
         retval = statement
-        if isinstance(params, BaseModel):
+        if params:
             for key, value in params.dict().items():
-                field = params.__fields__[key]
+                field = self._search_model.__fields__[key]
                 conditions = (
-                    # checks if we have a queriable .default
                     (field.allow_none is True) is (field.default is None),
-                    # checks we don't fall back to a factory instead
                     field.default_factory is None,
-                    # we actually have the default value
                     field.default == value,
                 )
                 if not all(conditions):
                     attr = getattr(self.db_model, key)
                     retval = retval.where(attr == key)
         return retval
+
+    def __hash__(self):
+        return hash(self.db_model)
