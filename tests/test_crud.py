@@ -39,6 +39,15 @@ async def test_get_one_not_found(client):
 
 
 @pytest.mark.asyncio
+async def test_get_one(client):
+    data = await make_several(client)
+    index = random.randrange(0, len(data))
+    response = await client.get(f"{ENDPOINT}/{index+1}")
+    assert response.status_code == 200
+    assert data[index] == response.json()
+
+
+@pytest.mark.asyncio
 async def test_create(client):
     expected_id = 1
     expected_name = "garlic"
