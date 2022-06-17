@@ -15,6 +15,7 @@ CALLABLE = Callable[..., Coroutine[Any, Any, Model]]
 NOT_FOUND = HTTPException(404, "Item not found")
 SESSION = AsyncSession
 DT = TypeVar("DT")
+PT = TypeVar("PT")
 ST = TypeVar("ST", Select, Delete)
 
 
@@ -160,7 +161,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
     def __hash__(self):
         return hash(self.db_model)
 
-    def _where_clause(self, statement: ST, params: BaseModel = None) -> ST:
+    def _where_clause(self, statement: ST, params: Optional[PT] = None) -> ST:
         retval = statement
         if isinstance(params, BaseModel):
             for key, value in params.dict().items():
