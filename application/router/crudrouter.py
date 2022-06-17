@@ -1,4 +1,5 @@
-from typing import Any, Callable, Coroutine, Optional, Type, Union
+import functools
+from typing import Any, Callable, Coroutine, Optional, Type, TypeVar
 
 from fastapi import Depends, HTTPException
 from fastapi_crudrouter import SQLAlchemyCRUDRouter  # type: ignore
@@ -8,12 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Delete, Select
 from sqlmodel import SQLModel
 
+
 Model = SQLModel
 PAGINATION = dict[str, Optional[int]]
 CALLABLE_LIST = Callable[..., Coroutine[Any, Any, list[Model]]]
 CALLABLE = Callable[..., Coroutine[Any, Any, Model]]
 NOT_FOUND = HTTPException(404, "Item not found")
 SESSION = AsyncSession
+ST = TypeVar("ST", Select, Delete)
 
 
 class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
@@ -35,6 +38,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
             tags=tags,
         )
 
+    @functools.cache
     def _get_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
         params_model = self._search_model
         data_model = type(self.db_model)
@@ -47,8 +51,8 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
             db: SESSION = Depends(self.db_func),
         ) -> list[data_model]:
             skip, limit = pagination.get("skip"), pagination.get("limit")
-            init: Select = select(self.db_model)
-            statement: Select = self._search_statement(params, init)
+            init = select(self.db_model)
+            statement = self._where_clause(init, params)
             statement = (
                 statement.order_by(getattr(self.db_model, self._pk))
                 .limit(limit)
@@ -120,13 +124,14 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         async def route(
             params: params_model = Depends(), db: SESSION = Depends(self.db_func)
         ) -> list[data_model]:
-            init: Delete = delete(self.db_model)
-            statement = self._search_statement(params, init)
+            init = delete(self.db_model)
+            statement = self._where_clause(init, params)
             await db.execute(statement)
             await db.commit()
 
             coro = self._get_all()
-            return await coro(db=db, pagination={"skip": 0, "limit": None})
+            result = await coro(db=db, pagination={"skip": 0, "limit": None})
+            return result
 
         return route
 
@@ -148,12 +153,22 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
     def __hash__(self):
         return hash(self.db_model)
 
-    def _search_statement(
-        self, params: BaseModel, statement: Union[Select, Delete]
-    ) -> Union[Select, Delete]:
+    def _where_clause(
+        self, statement: ST, params: Optional[BaseModel] = None
+    ) -> ST:
         retval = statement
-        for key, value in params.dict().items():
-            if value is not None:
-                attr = getattr(self.db_model, key)
-                retval = retval.where(attr == key)
+        if isinstance(params, BaseModel):
+            for key, value in params.dict().items():
+                field = params.__fields__[key]
+                conditions = (
+                    # checks if we have a queriable .default
+                    (field.allow_none is True) is (field.default is None),
+                    # checks we don't fall back to a factory instead
+                    field.default_factory is None,
+                    # we actually have the default value
+                    field.default == value,
+                )
+                if not all(conditions):
+                    attr = getattr(self.db_model, key)
+                    retval = retval.where(attr == key)
         return retval

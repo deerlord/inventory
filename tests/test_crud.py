@@ -14,7 +14,7 @@ def client():
     os.environ["DEBUG"] = "TRUE"
     app = setup_application()
     yield AsyncClient(app=app, base_url="http://localhost:8000")
-    os.remove("tests/data.sqlite")
+    os.remove("./data.sqlite")
 
 
 @pytest.mark.asyncio
