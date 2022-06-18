@@ -3,10 +3,10 @@ import asyncio
 from fastapi import FastAPI
 from sqlmodel import SQLModel
 
-from application.lib import database
-from application.router import crud_router
-from application.router._base import health_check
-from application.settings import Settings
+from .lib import database
+from .router import crud_router
+from .router._base import health_check
+from .settings import Settings
 
 
 def setup_application() -> FastAPI:

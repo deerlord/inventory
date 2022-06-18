@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
-from application.lib import database
-from application.lib import models as libmodels
-from application.router.crudrouter import AsyncCRUDRouter
+from ..lib import database
+from ..lib import models as libmodels
+from .crudrouter import AsyncCRUDRouter
 
 
 def crud_router() -> APIRouter:

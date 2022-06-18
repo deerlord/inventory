@@ -2,8 +2,8 @@ import sys
 
 import uvicorn  # type: ignore
 
-from application import setup_application
-from application.settings import Settings
+from . import setup_application
+from .settings import Settings
 
 if __name__ == "__main__":
     host = str(sys.argv[1])

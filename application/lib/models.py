@@ -3,7 +3,7 @@ from typing import Iterator, Type
 
 from sqlmodel import SQLModel
 
-from application import models
+from .. import models
 
 
 def find_all_models() -> Iterator[Type[SQLModel]]:

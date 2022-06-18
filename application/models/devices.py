@@ -1,22 +1,24 @@
 from typing import Optional
 
-from application.models._base import Table
+from sqlmodel import Field
+
+from ..lib.types import TABLE_ID
+from ._base import Table
 
 
-class Device(Table):
+class DeviceType(Table, table=True):
+    name: str
+    read_address: Optional[bytes] = None
+    read_command: Optional[bytes] = None
+    read_length: Optional[bytes] = None
+    write_address: Optional[bytes] = None
+    write_command: Optional[bytes] = None
+    write_bytes: Optional[list[bytes]] = None
+
+
+class Device(Table, table=True):
     location: str
     name: str
     latitude: Optional[float]
     longitude: Optional[float]
-    read_address: int
-    read_length: int = 1
-
-
-class Sensor(Device, table=True):
-    ...
-
-
-class RemoteDevice(Table, table=True):
-    write_address: int
-    write_length: int = 1
-    write_bytes: Optional[bytes] = None
+    devicetype_id: TABLE_ID = Field(default=None, foreign_key="devicetype.id")

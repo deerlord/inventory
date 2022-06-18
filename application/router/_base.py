@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException
 
-from application.lib import database
+from ..lib import database
 
 
 async def health_check(db=Depends(database.connection)):
