@@ -14,7 +14,7 @@ def main(host: str, port: int):
         "port": port,
         "loop": "uvloop",
         "log_level": settings.log_level.lower(),
-        "use_colors": settings.log_level == "DEBUG"
+        "use_colors": settings.log_level == "DEBUG",
     }
     uvicorn.run(app, **kwargs)
 

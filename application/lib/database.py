@@ -1,5 +1,5 @@
 # TODO: improve import of error based on database type
-import importlib
+from sqlite3 import IntegrityError
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -9,15 +9,6 @@ from application.lib import cache
 from ..settings import Settings
 
 __all__ = ["engine", "connection"]
-
-
-settings = Settings()
-if settings.database_protocol == "sqlite":
-    from sqlite3 import IntegrityError
-else:
-    IntegrityError = importlib.import_module(
-        f"{settings.database_driver}", "IntegrityError"
-    )
 
 
 def connection_string(settings: Settings):
