@@ -14,9 +14,8 @@ def main(host: str, port: int):
         "port": port,
         "loop": "uvloop",
         "log_level": settings.log_level.lower(),
+        "use_colors": settings.log_level == "DEBUG"
     }
-    if settings.log_level != "DEBUG":
-        kwargs["use_colors"] = False
     uvicorn.run(app, **kwargs)
 
 
