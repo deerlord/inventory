@@ -8,7 +8,6 @@ from application.lib import cache
 
 from ..settings import Settings
 
-
 __all__ = ["engine", "connection"]
 
 
@@ -16,7 +15,9 @@ settings = Settings()
 if settings.database_protocol == "sqlite":
     from sqlite3 import IntegrityError
 else:
-    IntegrityError = importlib.import_module(f"{settings.database_driver}", "IntegrityError")
+    IntegrityError = importlib.import_module(
+        f"{settings.database_driver}", "IntegrityError"
+    )
 
 
 def connection_string(settings: Settings):
