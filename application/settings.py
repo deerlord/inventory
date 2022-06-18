@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     database_password: Optional[str] = Field(env="DATABASE_PASSWORD", default=None)
     database_hostname: Optional[str] = Field(env="DATABASE_HOSTNAME", default=None)
     database_port: Optional[PositiveInt] = Field(env="DATABASE_PORT", default=None)
+    database_driver: Optional[str] = Field(env="DATABASE_DRIVER", default=None)
 
     class Config:
         env_file = ".env"

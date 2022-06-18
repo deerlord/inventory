@@ -1,4 +1,5 @@
-from sqlite3 import IntegrityError
+# TODO: improve import of error based on database type
+import importlib
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -7,7 +8,15 @@ from application.lib import cache
 
 from ..settings import Settings
 
+
 __all__ = ["engine", "connection"]
+
+
+settings = Settings()
+if settings.database_protocol == "sqlite":
+    from sqlite3 import IntegrityError
+else:
+    IntegrityError = importlib.import_module(f"{settings.database_driver}", "IntegrityError")
 
 
 def connection_string(settings: Settings):
@@ -29,11 +38,11 @@ def engine() -> AsyncEngine:
 
 
 async def connection():
-    async with session() as _:
+    async with session() as local:
         try:
-            yield _
+            yield local
         except IntegrityError:  # TODO: do something with exception?
-            await _.rollback()
+            await local.rollback()
 
 
 session = sessionmaker(engine(), expire_on_commit=False, class_=AsyncSession)
