@@ -20,7 +20,6 @@ def setup_application() -> FastAPI:
     app.include_router(crud_router())
     app.get("/health", tags=["Health"])(health_check)
 
-    # middleware.testing(app)
     return app
 
 
