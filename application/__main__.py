@@ -12,13 +12,14 @@ def main():
     if host is None or port is None:
         raise RuntimeError(f"No host/port provided: host={host}, port={port}")
     settings = Settings()
+    log_level = settings.log_level.lower()
     app = setup_application()
     kwargs = {
         "host": str(host),
         "port": int(port),
         "loop": "uvloop",
-        "log_level": settings.log_level.lower(),
-        "use_colors": settings.log_level == "DEBUG",
+        "log_level": log_level,
+        "use_colors": log_level == "DEBUG",
     }
     uvicorn.run(app, **kwargs)
 
