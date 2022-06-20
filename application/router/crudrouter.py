@@ -1,3 +1,4 @@
+import functools
 from typing import Any, Callable, Coroutine, Optional, Type, TypeVar
 
 from fastapi import Depends, HTTPException
@@ -7,27 +8,22 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Delete, Select
 from sqlmodel import SQLModel
+from starlette import status
 
-Model = SQLModel
 PAGINATION = dict[str, Optional[int]]
-CALLABLE_LIST = Callable[..., Coroutine[Any, Any, list[Model]]]
-CALLABLE = Callable[..., Coroutine[Any, Any, Model]]
-NOT_FOUND = HTTPException(404, "Item not found")
-SESSION = AsyncSession
+CALLABLE_LIST = Callable[..., Coroutine[Any, Any, list[SQLModel]]]
+CALLABLE = Callable[..., Coroutine[Any, Any, SQLModel]]
+NOT_FOUND = HTTPException(status.HTTP_404_NOT_FOUND, "Item not found")
 ST = TypeVar("ST", Select, Delete)
 
 
 class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
-    def __init__(self, model: Type[Model], db: Callable, prefix: str, tags=list[str]):
-        fields = {
-            field.name: (Optional[field.type_], None)
-            for field in model.__fields__.values()
-            if field.name != "id"
-        }
-        # error: No overload variant of "create_model" matches argument types "str", "Dict[Any, Tuple[object, None]]"
-        # despite the "no overload" error, this is absolutely valid and seems to be
-        # how the function is dynamically used
-        self._search_model = create_model(f"Search{model.__name__.capitalize()}", **fields)  # type: ignore
+    model: Type[SQLModel]
+
+    def __init__(
+        self, model: Type[SQLModel], db: Callable, prefix: str, tags=list[str]
+    ):
+        self.model = model
         super().__init__(
             schema=model,
             db_model=model,
@@ -36,45 +32,50 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
             tags=tags,
         )
 
-    def _model(self):
-        return self.db_model
-
-    def _queries(self):
-        return self._search_model
+    @functools.cached_property
+    def _search_model(self) -> BaseModel:
+        fields = {}
+        class_name = self.model.__name__.capitalize()
+        for field in self.model.__fields__.values():
+            if field.name != "id":
+                has_default = (field.allow_none is True) is (field.default is None)
+                default = field.default if has_default else ...
+                fields[field.name] = (field.outer_type_, default)
+        # mypy can't correctly type kwargs
+        model = create_model(f"Search{class_name}", **fields)  # type: ignore
+        return model
 
     async def _get_one_query(
         self,
-        db: SESSION,
+        db: AsyncSession,
         item_id: Optional[int] = None,
         params: Optional[BaseModel] = None,
-    ) -> SQLModel:
-        statement = select(self.db_model)
+    ) -> Optional[SQLModel]:
+        statement = select(self.model)
         if item_id:
-            statement = statement.where(getattr(self.db_model, self._pk) == item_id)
+            statement = statement.where(getattr(self.model, self._pk) == item_id)
         elif params:
             statement = self._where_clause(statement, params)
         else:
-            message = f"No item_id or params specified to query for model {self.db_model.__name__}."
+            message = f"No item_id or params specified to query for {self.model.__name__} data."
             raise Exception(message)
         results = await db.execute(statement)
         items = results.scalars().all()
         if len(items) == 0:
-            raise NOT_FOUND from None
+            return None
         return items[0]
 
     async def _get_many_query(
         self,
-        db: SESSION,
+        db: AsyncSession,
         skip: Optional[int] = 0,
         limit: Optional[int] = None,
         params: Optional[BaseModel] = None,
     ) -> list[SQLModel]:
-        statement = select(self.db_model)
+        statement = select(self.model)
         statement = self._where_clause(statement, params)
         statement = (
-            statement.order_by(getattr(self.db_model, self._pk))
-            .limit(limit)
-            .offset(skip)
+            statement.order_by(getattr(self.model, self._pk)).limit(limit).offset(skip)
         )
         results = await db.execute(statement)
         return results.scalars().all()
@@ -83,9 +84,9 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         async def route(
             # error: Variable "params_model" is not valid as a type
             # this works in the OpenAPI documentation though
-            params: BaseModel = Depends(self._search_model),
+            # self._search_model,  # type: ignore
             pagination: PAGINATION = self.pagination,
-            db: SESSION = Depends(self.db_func),
+            db: AsyncSession = Depends(self.db_func),
         ):
             skip, limit = pagination.get("skip"), pagination.get("limit")
             result = await self._get_many_query(db, skip, limit)
@@ -96,9 +97,14 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
     def _get_one(self, *args: Any, **kwargs: Any) -> CALLABLE:
         async def route(
             item_id: self._pk_type,  # type: ignore
-            db: SESSION = Depends(self.db_func),
+            db: AsyncSession = Depends(self.db_func),
         ):
             result = await self._get_one_query(db, item_id=item_id)
+            if result is None:
+                detail = f"{self.model.__name__.lower()} not found"
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=detail
+                )
             return result
 
         return route
@@ -106,9 +112,9 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
     def _create(self, *args: Any, **kwargs: Any) -> CALLABLE:
         async def route(
             model: self.create_schema,  # type: ignore
-            db: SESSION = Depends(self.db_func),
+            db: AsyncSession = Depends(self.db_func),
         ):
-            db_model = self.db_model(**model.dict())
+            db_model = self.model(**model.dict())
             db.add(db_model)
             await db.commit()
             await db.refresh(db_model)
@@ -120,7 +126,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         async def route(
             item_id: self._pk_type,  # type: ignore
             model: self.update_schema,  # type: ignore
-            db: SESSION = Depends(self.db_func),
+            db: AsyncSession = Depends(self.db_func),
         ):
             db_model = await self._get_one_query(db, item_id=item_id)
 
@@ -137,11 +143,10 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
     def _delete_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
         async def route(
-            params: BaseModel = Depends(self._search_model),
-            db: SESSION = Depends(self.db_func),
+            db: AsyncSession = Depends(self.db_func),
         ):
-            statement = delete(self.db_model)
-            statement = self._where_clause(statement, params)
+            statement = delete(self.model)
+            statement = self._where_clause(statement)
             await db.execute(statement)
             await db.commit()
 
@@ -152,7 +157,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
     def _delete_one(self, *args: Any, **kwargs: Any) -> CALLABLE:
         async def route(
-            item_id: self._pk_type, db: SESSION = Depends(self.db_func)  # type: ignore
+            item_id: self._pk_type, db: AsyncSession = Depends(self.db_func)  # type: ignore
         ):
             db_model = await self._get_one_query(db, item_id=item_id)
             await db.delete(db_model)
@@ -166,17 +171,19 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         retval = statement
         if params:
             for key, value in params.dict().items():
-                field = self._search_model.__fields__[key]
-                # TODO: improve this check, as we might need to use default_factory for something
-                conditions = (
-                    (field.allow_none is True) is (field.default is None),
-                    field.default_factory is None,
-                    field.default == value,
-                )
-                if not all(conditions):
-                    attr = getattr(self.db_model, key)
-                    retval = retval.where(attr == key)
+                attr = getattr(self.model, key)
+                retval = retval.where(attr == key)
         return retval
 
     def __hash__(self):
-        return hash(self.db_model)
+        return hash(self.model)
+
+    def _default_checker(self, key: str, value: Any) -> bool:
+        field = self.model.__fields__[key]
+        # TODO: improve this check, as we might need to use default_factory for something
+        conditions = (
+            (field.allow_none is True) is (field.default is None),
+            field.default_factory is None,
+            field.default == value,
+        )
+        return all(conditions)

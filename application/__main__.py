@@ -22,6 +22,7 @@ def main(host: str, port: int):
 if __name__ == "__main__":
     _host = os.environ.get("API_HOST")
     _port = os.environ.get("API_POST")
-    if None in {"host", "port"}:
+    if None in {_host, _port}:
         raise RuntimeError(f"No host/port provided: host={_host}, port={_port}")
-    main(str(_host), int(_port))
+    # mypy
+    main(str(_host), int(_port))  # type: ignore

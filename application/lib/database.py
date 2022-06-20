@@ -19,7 +19,8 @@ def connection_string(settings: Settings):
         ),
         "sqlite": "sqlite+aiosqlite://{database_name}",
     }
-    return strings[settings.database_protocol].format(**settings.dict())
+    string = strings[settings.database_protocol]
+    return string.format(**settings.dict())
 
 
 @cache.singleton
