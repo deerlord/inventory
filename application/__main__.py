@@ -6,12 +6,16 @@ from . import setup_application
 from .settings import Settings
 
 
-def main(host: str, port: int):
+def main():
+    host = os.environ.get("API_HOST")
+    port = os.environ.get("API_POST")
+    if host is None or port is None:
+        raise RuntimeError(f"No host/port provided: host={host}, port={port}")
     settings = Settings()
     app = setup_application()
     kwargs = {
-        "host": host,
-        "port": port,
+        "host": str(host),
+        "port": int(port),
         "loop": "uvloop",
         "log_level": settings.log_level.lower(),
         "use_colors": settings.log_level == "DEBUG",
@@ -20,9 +24,4 @@ def main(host: str, port: int):
 
 
 if __name__ == "__main__":
-    _host = os.environ.get("API_HOST")
-    _port = os.environ.get("API_POST")
-    if None in {_host, _port}:
-        raise RuntimeError(f"No host/port provided: host={_host}, port={_port}")
-    # mypy
-    main(str(_host), int(_port))  # type: ignore
+    main()
