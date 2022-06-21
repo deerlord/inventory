@@ -4,7 +4,7 @@ from sqlite3 import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from application.lib import cache
+from ..lib import cache
 
 from ..settings import Settings
 

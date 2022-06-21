@@ -1,5 +1,4 @@
 import functools
-
 from typing import Any, Callable, Coroutine, Optional, Type, TypeVar
 
 from fastapi import Depends, HTTPException
@@ -11,7 +10,8 @@ from sqlalchemy.sql import Delete, Select
 from sqlmodel import SQLModel
 from starlette import status
 
-from application.models._base import SearchModel
+from ..lib import database
+from ..models._base import SearchModel
 
 PAGINATION = dict[str, Optional[int]]
 CALLABLE_LIST = Callable[..., Coroutine[Any, Any, list[SQLModel]]]
@@ -21,25 +21,26 @@ ST = TypeVar("ST", Select, Delete)
 
 
 class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
-    model: Type[SQLModel]
+    sql_model: Type[SQLModel]
 
     def __init__(
-        self, model: Type[SQLModel], db: Callable, prefix: str, tags=list[str]
+        self,
+        sql_model: Type[SQLModel],
     ):
-        self.model = model
+        self.sql_model = sql_model
         super().__init__(
-            schema=model,
-            db_model=model,
-            db=db,
-            prefix=prefix,
-            tags=tags,
+            schema=sql_model,
+            db_model=sql_model,
+            db=database.connection,
+            prefix=f"/{sql_model.__name__}",
+            tags=[sql_model.__name__],
         )
 
     @functools.cached_property
     def _search_schema(self) -> BaseModel:
         fields = {}
-        class_name = self.model.__name__.capitalize()
-        for field in self.model.__fields__.values():
+        class_name = self.sql_model.__name__.capitalize()
+        for field in self.sql_model.__fields__.values():
             fields[field.name] = (field.outer_type_ | None, None)
         fields.pop("id")
         model = create_model(
@@ -59,7 +60,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         elif params is not None:
             statement = self._where_clause(statement, params)
         else:
-            message = f"No item_id or params specified to query for {self.model.__name__} data."
+            message = f"No item_id or params specified to query for {self.sql_model.__name__} data."
             raise Exception(message)
         results = await db.execute(statement)
         items = results.scalars().all()
@@ -77,7 +78,9 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         statement = select(self.db_model)
         statement = self._where_clause(statement, params)
         statement = (
-            statement.order_by(getattr(self.db_model, self._pk)).limit(limit).offset(skip)
+            statement.order_by(getattr(self.db_model, self._pk))
+            .limit(limit)
+            .offset(skip)
         )
         results = await db.execute(statement)
         return results.scalars().all()
@@ -102,7 +105,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         ):
             result = await self._get_one_query(db, item_id=item_id)
             if result is None:
-                detail = f"{self.model.__name__.lower()} not found"
+                detail = f"{self.sql_model.__name__.lower()} not found"
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND, detail=detail
                 )
@@ -161,7 +164,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
     def _delete_one(self, *args: Any, **kwargs: Any) -> CALLABLE:
         async def route(
             item_id: self._pk_type,  # type: ignore
-            db: AsyncSession = Depends(self.db_func)
+            db: AsyncSession = Depends(self.db_func),
         ):
             db_model = await self._get_one_query(db, item_id=item_id)
             await db.delete(db_model)
@@ -186,4 +189,4 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         return statement
 
     def __hash__(self):
-        return hash(self.model)
+        return hash(self.sql_model)
