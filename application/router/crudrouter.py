@@ -28,12 +28,14 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         sql_model: Type[SQLModel],
     ):
         self.sql_model = sql_model
+        model_name = sql_model.__name__
+        category = sql_model.__module__.split(".")[-1]
         super().__init__(
             schema=sql_model,
             db_model=sql_model,
             db=database.connection,
-            prefix=f"/{sql_model.__name__}",
-            tags=[sql_model.__name__],
+            prefix=f"/{model_name}",
+            tags=[category.capitalize()]
         )
 
     @functools.cached_property
