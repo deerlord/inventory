@@ -162,7 +162,8 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
     def _delete_one(self, *args: Any, **kwargs: Any) -> CALLABLE:
         async def route(
-            item_id: self._pk_type, db: AsyncSession = Depends(self.db_func)  # type: ignore
+            item_id: self._pk_type,  # type: ignore
+            db: AsyncSession = Depends(self.db_func)
         ):
             db_model = await self._get_one_query(db, item_id=item_id)
             await db.delete(db_model)
@@ -172,25 +173,19 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
         return route
 
-    def _where_clause(self, statement: ST, params: Optional[BaseModel] = None) -> ST:
-        # loose implementation
-        retval = statement
+    def _where_clause(self, query: ST, params: Optional[BaseModel] = None) -> ST:
+        statement = query
         clauses = []
         if params:
             for name, search_field in params.__fields__.items():
-                # TODO: improve how we check, as providing None should be doable
-                # can we use Ellipses somehow? Pydantic does not seem to like this as an
-                # actual value.
-                # model_field = self.db_model.__fields__[name]
                 search_value = getattr(params, name)
                 if search_value is None:
-                    # can not search for None in a required field
                     continue
                 attr = getattr(self.db_model, name)
                 where = attr == search_value
                 clauses.append(where)
-            retval = retval.where(*clauses)
-        return retval
+            statement = statement.where(*clauses)
+        return statement
 
     def __hash__(self):
         return hash(self.model)
