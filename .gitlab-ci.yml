@@ -37,7 +37,7 @@ test:
     - mypy application
     - pytest
 
-run:
+build:
   script:
     - poetry build
   artifacts:
