@@ -36,7 +36,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         )
 
     @functools.cached_property
-    def _search_model(self) -> BaseModel:
+    def _search_schema(self) -> BaseModel:
         fields = {}
         class_name = self.model.__name__.capitalize()
         for field in self.model.__fields__.values():
@@ -84,14 +84,11 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
     def _get_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
         async def route(
-            # error: Variable "params_model" is not valid as a type
-            # this works in the OpenAPI documentation though
-            # self._search_model,  # type: ignore
-            params: self._search_model = Depends(),  # type: ignore
+            # mypy complains about self._search_schema, but API works as expected
+            params: self._search_schema = Depends(),  # type: ignore
             pagination: PAGINATION = self.pagination,
             db: AsyncSession = Depends(self.db_func),
         ):
-            print("route params", params)
             skip, limit = pagination.get("skip"), pagination.get("limit")
             result = await self._get_many_query(db, skip, limit, params)
             return result
@@ -147,7 +144,8 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
     def _delete_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
         async def route(
-            params: self._search_model = Depends(),  # type: ignore
+            # mypy complains about self._search_schema, but API works as expected
+            params: self._search_schema = Depends(),  # type: ignore
             db: AsyncSession = Depends(self.db_func),
         ):
             statement = delete(self.db_model)
