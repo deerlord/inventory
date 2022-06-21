@@ -1,12 +1,10 @@
 import functools
-import types
-from copy import deepcopy
+
 from typing import Any, Callable, Coroutine, Optional, Type, TypeVar
 
 from fastapi import Depends, HTTPException
 from fastapi_crudrouter import SQLAlchemyCRUDRouter  # type: ignore
-from pydantic import BaseModel, Field, create_model, validator
-from pydantic.fields import FieldInfo, ModelField, Undefined
+from pydantic import BaseModel, create_model
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Delete, Select
@@ -182,7 +180,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
                 # TODO: improve how we check, as providing None should be doable
                 # can we use Ellipses somehow? Pydantic does not seem to like this as an
                 # actual value.
-                model_field = self.model.__fields__[name]
+                # model_field = self.model.__fields__[name]
                 search_value = getattr(params, name)
                 if search_value is None:
                     # can not search for None in a required field
