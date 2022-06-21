@@ -28,11 +28,11 @@ before_script:
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
+  - pip install poetry
+  - poetry install
 
 test:
   script:
-    - pip install poetry
-    - poetry install
     - flake8 application
     - mypy application
     - pytest
