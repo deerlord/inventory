@@ -50,12 +50,12 @@ The `.env` file should contain the following settings
 
 `LOG_LEVEL` will default to `INFO`, and only needs to be set if you require a different logging level. The `DATABASE_*` settings are dependent on the database driver you are using, and may not all be required. You will also need to ensure your database driver is installed.
 
-### Commands
+### Command
 
-With the appropriate environment variables set for your system, you may start the service.
+Use the environment variables `API_HOST` and `API_PORT` to set the listener. These variables take precedence if they exist, however you can alternatively pass the `host` and `port` values on the command line.
 
 ```bash
-python -m application
+python -m application [host] [port]
 ```
 
 ## Routes Offered
