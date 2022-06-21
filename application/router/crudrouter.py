@@ -53,9 +53,9 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         item_id: Optional[int] = None,
         params: Optional[BaseModel] = None,
     ) -> Optional[SQLModel]:
-        statement = select(self.model)
+        statement = select(self.db_model)
         if item_id is not None:
-            statement = statement.where(getattr(self.model, self._pk) == item_id)
+            statement = statement.where(getattr(self.db_model, self._pk) == item_id)
         elif params is not None:
             statement = self._where_clause(statement, params)
         else:
@@ -74,10 +74,10 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         limit: Optional[int] = None,
         params: Optional[BaseModel] = None,
     ) -> list[SQLModel]:
-        statement = select(self.model)
+        statement = select(self.db_model)
         statement = self._where_clause(statement, params)
         statement = (
-            statement.order_by(getattr(self.model, self._pk)).limit(limit).offset(skip)
+            statement.order_by(getattr(self.db_model, self._pk)).limit(limit).offset(skip)
         )
         results = await db.execute(statement)
         return results.scalars().all()
@@ -118,7 +118,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
             model: self.create_schema,  # type: ignore
             db: AsyncSession = Depends(self.db_func),
         ):
-            db_model = self.model(**model.dict())
+            db_model = self.db_model(**model.dict())
             db.add(db_model)
             await db.commit()
             await db.refresh(db_model)
@@ -147,10 +147,11 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
     def _delete_all(self, *args: Any, **kwargs: Any) -> CALLABLE_LIST:
         async def route(
+            params: self._search_model = Depends(),  # type: ignore
             db: AsyncSession = Depends(self.db_func),
         ):
-            statement = delete(self.model)
-            statement = self._where_clause(statement)
+            statement = delete(self.db_model)
+            statement = self._where_clause(statement, params)
             await db.execute(statement)
             await db.commit()
 
@@ -180,7 +181,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
                 # TODO: improve how we check, as providing None should be doable
                 # can we use Ellipses somehow? Pydantic does not seem to like this as an
                 # actual value.
-                # model_field = self.model.__fields__[name]
+                # model_field = self.db_model.__fields__[name]
                 search_value = getattr(params, name)
                 if search_value is None:
                     # can not search for None in a required field
@@ -193,15 +194,3 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
 
     def __hash__(self):
         return hash(self.model)
-
-    def _is_default(self, name: str, value: Any) -> bool:
-        # TODO: improve this check, as we might need to use default_factory for something
-        field = self.model.__fields__.get(name)
-        if field is None:
-            return True
-        conditions = (
-            (field.allow_none is True) is (field.default is None),
-            field.default_factory is None,
-            field.default == value,
-        )
-        return all(conditions)
