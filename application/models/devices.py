@@ -21,4 +21,4 @@ class Device(Table, table=True):
     name: str
     latitude: Optional[float]
     longitude: Optional[float]
-    devicetype_id: TABLE_ID = Field(default=None, foreign_key="devicetype.id")
+    devicetype_id: TABLE_ID = Field(foreign_key="devicetype.id")

@@ -1,14 +1,19 @@
 import functools
+import types
+from copy import deepcopy
 from typing import Any, Callable, Coroutine, Optional, Type, TypeVar
 
 from fastapi import Depends, HTTPException
 from fastapi_crudrouter import SQLAlchemyCRUDRouter  # type: ignore
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, Field, create_model, validator
+from pydantic.fields import FieldInfo, ModelField, Undefined
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Delete, Select
 from sqlmodel import SQLModel
 from starlette import status
+
+from application.models._base import SearchModel
 
 PAGINATION = dict[str, Optional[int]]
 CALLABLE_LIST = Callable[..., Coroutine[Any, Any, list[SQLModel]]]
@@ -37,12 +42,11 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         fields = {}
         class_name = self.model.__name__.capitalize()
         for field in self.model.__fields__.values():
-            if field.name != "id":
-                has_default = (field.allow_none is True) is (field.default is None)
-                default = field.default if has_default else ...
-                fields[field.name] = (field.outer_type_, default)
-        # mypy can't correctly type kwargs
-        model = create_model(f"Search{class_name}", **fields)  # type: ignore
+            fields[field.name] = (field.outer_type_ | None, None)
+        fields.pop("id")
+        model = create_model(
+            f"Search{class_name}", __base__=SearchModel, **fields  # type: ignore
+        )
         return model
 
     async def _get_one_query(
@@ -52,9 +56,9 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         params: Optional[BaseModel] = None,
     ) -> Optional[SQLModel]:
         statement = select(self.model)
-        if item_id:
+        if item_id is not None:
             statement = statement.where(getattr(self.model, self._pk) == item_id)
-        elif params:
+        elif params is not None:
             statement = self._where_clause(statement, params)
         else:
             message = f"No item_id or params specified to query for {self.model.__name__} data."
@@ -85,11 +89,13 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
             # error: Variable "params_model" is not valid as a type
             # this works in the OpenAPI documentation though
             # self._search_model,  # type: ignore
+            params: self._search_model = Depends(),  # type: ignore
             pagination: PAGINATION = self.pagination,
             db: AsyncSession = Depends(self.db_func),
         ):
+            print("route params", params)
             skip, limit = pagination.get("skip"), pagination.get("limit")
-            result = await self._get_many_query(db, skip, limit)
+            result = await self._get_many_query(db, skip, limit, params)
             return result
 
         return route
@@ -168,19 +174,33 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         return route
 
     def _where_clause(self, statement: ST, params: Optional[BaseModel] = None) -> ST:
+        # loose implementation
         retval = statement
+        clauses = []
         if params:
-            for key, value in params.dict().items():
-                attr = getattr(self.model, key)
-                retval = retval.where(attr == key)
+            for name, search_field in params.__fields__.items():
+                # TODO: improve how we check, as providing None should be doable
+                # can we use Ellipses somehow? Pydantic does not seem to like this as an
+                # actual value.
+                model_field = self.model.__fields__[name]
+                search_value = getattr(params, name)
+                if search_value is None:
+                    # can not search for None in a required field
+                    continue
+                attr = getattr(self.db_model, name)
+                where = attr == search_value
+                clauses.append(where)
+            retval = retval.where(*clauses)
         return retval
 
     def __hash__(self):
         return hash(self.model)
 
-    def _default_checker(self, key: str, value: Any) -> bool:
-        field = self.model.__fields__[key]
+    def _is_default(self, name: str, value: Any) -> bool:
         # TODO: improve this check, as we might need to use default_factory for something
+        field = self.model.__fields__.get(name)
+        if field is None:
+            return True
         conditions = (
             (field.allow_none is True) is (field.default is None),
             field.default_factory is None,

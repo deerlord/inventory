@@ -8,7 +8,7 @@ from .settings import Settings
 
 def main():
     host = os.environ.get("API_HOST")
-    port = os.environ.get("API_POST")
+    port = os.environ.get("API_PORT")
     if host is None or port is None:
         raise RuntimeError(f"No host/port provided: host={host}, port={port}")
     settings = Settings()

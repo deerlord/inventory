@@ -5,11 +5,12 @@ from sqlmodel import SQLModel
 
 from .. import models
 
-
+"""
 def find_all_models() -> Iterator[Type[SQLModel]]:
     for package in find_packages():
         for model in find_data_models(package):
             yield model
+"""
 
 
 def find_packages() -> Iterator[ModuleType]:
