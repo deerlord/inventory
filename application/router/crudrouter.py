@@ -39,7 +39,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         )
 
     @functools.cached_property
-    def _search_schema(self) -> BaseModel:
+    def _search_schema(self) -> Type[SearchModel]:
         fields = {}
         class_name = self.sql_model.__name__.capitalize()
         for field in self.sql_model.__fields__.values():

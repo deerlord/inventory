@@ -36,6 +36,8 @@ test:
     - flake8 application
     - mypy application
     - pytest
+    # --concurrency=gevent ensures that post-await lines are collected correctly
+    #- coverage run --concurrency=gevent -m pytest tests && coverage report -m
 
 build:
   script:

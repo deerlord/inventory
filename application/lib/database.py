@@ -9,6 +9,8 @@ from ..settings import Settings
 
 __all__ = ["engine", "connection"]
 
+SESSION = AsyncSession
+
 
 def connection_string(settings: Settings):
     strings = {
@@ -37,4 +39,4 @@ async def connection():
             await local.rollback()
 
 
-session = sessionmaker(engine(), expire_on_commit=False, class_=AsyncSession)
+session = sessionmaker(engine(), expire_on_commit=False, class_=SESSION)
