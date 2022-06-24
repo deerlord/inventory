@@ -35,7 +35,7 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
             db_model=sql_model,
             db=database.connection,
             prefix=f"/{model_name}",
-            tags=[category.capitalize()]
+            tags=[category.capitalize()],
         )
 
     @functools.cached_property

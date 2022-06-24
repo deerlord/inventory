@@ -52,7 +52,7 @@ The `.env` file should contain the following settings
 
 ### Command
 
-Use the environment variables `API_HOST` and `API_PORT` to set the listener. These variables take precedence if they exist, however you can alternatively pass the `host` and `port` values on the command line.
+If the `host` and `port` values are not provided on the command line, fallback to environment variables `API_HOST` and `API_PORT`
 
 ```bash
 python -m application [host] [port]
