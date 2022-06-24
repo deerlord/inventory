@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException, status
 from ..lib import database
 
 
-async def check(db: database.SESSION = Depends(database.connection)):
+async def check(db=Depends(database.connection)):
     try:
         await db.execute("SELECT 1")
     except Exception:
