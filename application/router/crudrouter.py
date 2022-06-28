@@ -53,17 +53,10 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
     async def _get_one_query(
         self,
         db: AsyncSession,
-        item_id: Optional[int] = None,
-        params: Optional[BaseModel] = None,
+        item_id: int,
     ) -> Optional[SQLModel]:
         statement = select(self.db_model)
-        if item_id is not None:
-            statement = statement.where(getattr(self.db_model, self._pk) == item_id)
-        elif params is not None:
-            statement = self._where_clause(statement, params)
-        else:
-            detail = f"No item_id or params specified to query for {self.sql_model.__name__} data."
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+        statement = statement.where(getattr(self.db_model, self._pk) == item_id)
         results = await db.execute(statement)
         items = results.scalars().all()
         if len(items) == 0:
