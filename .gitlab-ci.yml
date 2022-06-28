@@ -29,6 +29,9 @@ test:
     - mypy application tests
     - coverage run --concurrency=gevent -m pytest tests
     - coverage xml
+  artifacts:
+    paths:
+      - coverage.xml
 
 build:
   script:
@@ -38,5 +41,3 @@ build:
       - dist/*.whl
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-
-

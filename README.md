@@ -7,7 +7,7 @@ Provides an HTTP API for exposing CRUD style routes against database tables.
 ### Models
 `models/`
 
-`SQLModel`s for each database table are located in the `models/*.py` files. Models with `table=True` will automatically be converted to CRUD routes.
+`SQLModel`s for each database table are located in the `models/*.py` files. Models with `table=True` will automatically be converted to CRUD routes, and added to the database on application startup.
 
 ### Router
 `router/`
@@ -22,12 +22,12 @@ Install requirements first.
 pip install -r requirements.txt
 ```
 
-Then let `poetry` handle the dependencies for you. Currently we only support postgres (and sqlite, for testing) as a database driver. However, 
+Then let `poetry` handle the dependencies for you. Currently, we only support postgres (and sqlite, for testing) as a database driver. 
 ```bash
 poetry install --no-dev [--extras pgsql]
 ```
 
-If you are running containers, you probably want to mount the code to the container, rather than writing it to the image. This will prep your image with the dependencies but allow the mounted code to be used for the application. 
+If you are running containers, you probably want to mount the code to the container, rather than writing it to the image. This will create the setup.py file and allow the mounted code to be used for the application without a re-install.
 ```bash
 poetry build
 pip install -e .
@@ -51,13 +51,15 @@ The `.env` file should contain the following settings
 
 ### Command
 
-If the `host` and `port` values are not provided on the command line, fallback to environment variables `API_HOST` and `API_PORT`
+If the `host` and `port` values are not provided on the command line, fallback to environment variables `API_HOST` and `API_PORT`. One of these sets of variables must exist for the application to start.
 
 ```bash
 python -m application [host] [port]
 ```
 
 ## Routes Offered
+
+These utilize the same category and model formatting as mentioned in [Router](#Router).
 
 ### Get All
 `GET /category/model`
