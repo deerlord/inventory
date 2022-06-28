@@ -22,9 +22,9 @@ Install requirements first.
 pip install -r requirements.txt
 ```
 
-Then let `poetry` handle the dependencies for you.
+Then let `poetry` handle the dependencies for you. Currently we only support postgres (and sqlite, for testing) as a database driver. However, 
 ```bash
-poetry install --no-dev
+poetry install --no-dev [--extras pgsql]
 ```
 
 If you are running containers, you probably want to mount the code to the container, rather than writing it to the image. This will prep your image with the dependencies but allow the mounted code to be used for the application. 
@@ -46,7 +46,6 @@ The `.env` file should contain the following settings
 - DATABASE_PASSWORD
 - DATABASE_HOSTNAME
 - DATABASE_PORT
-- DATABASE_DRIVER
 
 `LOG_LEVEL` will default to `INFO`, and only needs to be set if you require a different logging level. The `DATABASE_*` settings are dependent on the database driver you are using, and may not all be required. You will also need to ensure your database driver is installed.
 

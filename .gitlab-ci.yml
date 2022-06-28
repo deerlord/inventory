@@ -1,4 +1,4 @@
-image: python:latest
+image: python:3.10
 
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
@@ -21,15 +21,14 @@ before_script:
   - virtualenv venv
   - source venv/bin/activate
   - pip install poetry
-  - poetry install
+  - poetry install --extras sqlite
 
 test:
   script:
     - flake8 application
     - mypy application
-    - pytest
-    # --concurrency=gevent ensures that post-await lines are collected correctly
-    #- coverage run --concurrency=gevent -m pytest tests && coverage report -m
+    - coverage run --concurrency=gevent -m pytest tests
+    - coverage xml
 
 build:
   script:
