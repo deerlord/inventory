@@ -15,14 +15,11 @@ SESSION = AsyncSession
 def connection_string(settings: Settings):
     strings = {
         "postgresql": (
-            "postgresql+{database_driver}://{database_username}:{database_password}"
+            "postgresql+asyncpg://{database_username}:{database_password}"
             "@{database_hostname}:{database_port}/{database_name}"
         ),
-        "sqlite": "sqlite+{database_driver}://{database_name}",
+        "sqlite": "sqlite+aiosqlite://{database_name}",
     }
-    # asyncio drivers
-    # sqlite: aiosqlite
-    # postgresql: asyncpg
     string = strings[settings.database_protocol]
     return string.format(**settings.dict())
 
