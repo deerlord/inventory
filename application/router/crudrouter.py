@@ -62,8 +62,8 @@ class AsyncCRUDRouter(SQLAlchemyCRUDRouter):
         elif params is not None:
             statement = self._where_clause(statement, params)
         else:
-            message = f"No item_id or params specified to query for {self.sql_model.__name__} data."
-            raise Exception(message)
+            detail = f"No item_id or params specified to query for {self.sql_model.__name__} data."
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
         results = await db.execute(statement)
         items = results.scalars().all()
         if len(items) == 0:

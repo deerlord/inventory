@@ -108,6 +108,16 @@ async def test_update(setup):
     assert json["id"] == item_id
 
 
+@pytest.mark.asyncio
+async def test_search(setup):
+    _, client = setup
+    data = await make_several(client)
+    expected = [data.pop(0)]
+    response = await client.get(ENDPOINT, params={"name": "name_1"})
+    assert response.status_code == 200
+    assert response.json() == expected
+
+
 async def make_several(c: AsyncClient, count: int = 10) -> list:
     data = []
     for item_id in range(1, count):
