@@ -14,7 +14,7 @@ SESSION = AsyncSession
 
 def connection_string(settings: Settings):
     strings = {
-        "postgresql": (
+        "pgsql": (
             "postgresql+asyncpg://{database_username}:{database_password}"
             "@{database_hostname}:{database_port}/{database_name}"
         ),
