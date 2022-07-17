@@ -13,4 +13,4 @@ class Settings(BaseSettings):
     database_port: Optional[PositiveInt] = Field(env="DATABASE_PORT", default=None)
 
     class Config:
-        env_file = ".env"
+        env_file = "/secrets/.env"
