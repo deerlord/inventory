@@ -10,7 +10,7 @@ from .settings import Settings
 
 def setup_application() -> FastAPI:
     settings = Settings()
-    asyncio.run(init_database())
+    asyncio.run(init_database()) 
     debug = settings.log_level.upper() == "DEBUG"
     app = FastAPI(debug=debug)
     top_router = crud_router()
