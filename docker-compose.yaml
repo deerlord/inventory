@@ -1,0 +1,44 @@
+services:
+  api:
+    image: inventory
+    networks:
+      - inventory
+    # volumes:
+    #   - type: volume
+    #     source: data
+    #     target: /opt/data
+    configs:
+      - source: app_config
+        target: /secrets/.env
+    ports:
+      - "8000:8000"
+    command: ["/opt/venv/bin/python", "/opt/application", "127.0.0.1", "8000"]
+    restart: always
+  # nginx:
+  #   image: nginx
+  #   networks:
+  #     - inventory
+  #   configs:
+  #     - source: proxy_config
+  #       target: /etc/nginx/conf.d/
+  #     - source: nginx_config
+  #       target: /etc/nginx/conf.d/
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   restart: always
+
+configs:
+  app_config:
+    file: ./configs/inventory.conf
+  nginx_config:
+    file: ./configs/nginx.conf
+  proxy_config:
+    file: ./configs/proxy.conf
+
+volumes:
+  data:
+
+networks:
+  inventory: {}
+    

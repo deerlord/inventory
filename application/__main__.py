@@ -5,15 +5,11 @@ import uvicorn  # type: ignore
 
 from application import setup_application
 from application.settings import Settings
-import logging
 
 
 def main(host: str, port: int):
-    logger = logging.getLogger()
-    logger.info("Loading settings")
     settings = Settings()
     log_level = settings.log_level.lower()
-    logger.info("Initializing application")
     app = setup_application()
     kwargs = {
         "host": host,
@@ -22,7 +18,6 @@ def main(host: str, port: int):
         "log_level": log_level,
         "use_colors": log_level == "DEBUG",
     }
-    logger.info("Starting server")
     uvicorn.run(app, **kwargs)
 
 
