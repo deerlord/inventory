@@ -1,9 +1,10 @@
 from datetime import datetime
+from enum import Enum
+
 from sqlmodel import Field
 
 from ..lib.types import TABLE_ID
 from ._base import Table
-from enum import Enum
 
 
 class Filetype(str, Enum):

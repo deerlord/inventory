@@ -3,10 +3,10 @@ services:
     image: inventory
     networks:
       - inventory
-    # volumes:
-    #   - type: volume
-    #     source: data
-    #     target: /opt/data
+    volumes:
+      - type: volume
+        source: data
+        target: /opt/data
     configs:
       - source: app_config
         target: /secrets/.env
@@ -14,19 +14,27 @@ services:
       - "8000:8000"
     command: ["/opt/venv/bin/python", "/opt/application", "127.0.0.1", "8000"]
     restart: always
-  # nginx:
-  #   image: nginx
-  #   networks:
-  #     - inventory
-  #   configs:
-  #     - source: proxy_config
-  #       target: /etc/nginx/conf.d/
-  #     - source: nginx_config
-  #       target: /etc/nginx/conf.d/
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   restart: always
+  nginx:
+    depends_on:
+      - api
+    image: nginx
+    networks:
+      - inventory
+    configs:
+      - source: proxy_config
+        target: /etc/nginx/conf.d/proxy.conf
+      - source: nginx_config
+        target: /etc/nginx/conf.d/api.conf
+      - source: dhparam_pem
+        target: /etc/nginx/ssl/dhparam.pem
+      - source: crt_pem
+        target: /etc/nginx/ssl/inventory.crt
+      - source: key_pem
+        target: /etc/nginx/ssl/inventory.key
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: always
 
 configs:
   app_config:
@@ -35,6 +43,12 @@ configs:
     file: ./configs/nginx.conf
   proxy_config:
     file: ./configs/proxy.conf
+  dhparam_pem:
+    file: ./configs/dhparam.pem
+  crt_pem:
+    file: ./configs/inventory.crt
+  key_pem:
+    file: ./configs/inventory.key
 
 volumes:
   data:

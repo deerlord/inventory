@@ -6,6 +6,7 @@ from sqlmodel import SQLModel
 from .lib import database
 from .router import crud_router, health
 from .settings import Settings
+import sqlalchemy
 
 
 def setup_application() -> FastAPI:
