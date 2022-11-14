@@ -1,1 +1,1 @@
-from . import devices, food, medication  # noqa: F401
+from . import devices, food, medication, music  # noqa: F401
