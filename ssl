@@ -1,0 +1,16 @@
+C=""
+ST=""
+L=""
+O=""
+OU=""
+CN=""
+
+openssl req -newkey rsa:4096 \
+            -x509 \
+            -sha256 \
+            -days 3650 \
+            -nodes \
+            -out configs/inventory.crt \
+            -keyout configs/inventory.key \
+            -subj "/C=${C}/ST=${ST}/L=${L}/O=${O}/OU=${OU}/CN=${CN}"
+openssl dhparam -out configs/dhparam.pem 4096

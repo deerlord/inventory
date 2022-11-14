@@ -1,18 +1,17 @@
 services:
   api:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: inventory
     networks:
       - inventory
     volumes:
-      - type: volume
-        source: data
-        target: /opt/data
+      - data:/opt/data:rw
     configs:
       - source: app_config
         target: /secrets/.env
-    ports:
-      - "8000:8000"
-    command: ["/opt/venv/bin/python", "/opt/application", "127.0.0.1", "8000"]
+    command: ["/opt/venv/bin/python", "/opt/application", "0.0.0.0", "8000"]
     restart: always
   nginx:
     depends_on:
