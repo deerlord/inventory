@@ -1,3 +1,0 @@
-upstream inventory {
-  server inventory-api-1:8000;
-}
