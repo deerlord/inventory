@@ -13,45 +13,15 @@ services:
         target: /secrets/.env
     command: ["/opt/venv/bin/python", "/opt/application", "0.0.0.0", "8000"]
     restart: always
-  nginx:
-    depends_on:
-      - api
-    image: nginx
-    networks:
-      - inventory
-    configs:
-      - source: proxy_config
-        target: /etc/nginx/conf.d/proxy.conf
-      - source: nginx_config
-        target: /etc/nginx/conf.d/api.conf
-      - source: dhparam_pem
-        target: /etc/nginx/ssl/dhparam.pem
-      - source: crt_pem
-        target: /etc/nginx/ssl/inventory.crt
-      - source: key_pem
-        target: /etc/nginx/ssl/inventory.key
-    ports:
-      - "80:80"
-      - "443:443"
-    restart: always
 
 configs:
   app_config:
     file: ./configs/inventory.conf
-  nginx_config:
-    file: ./configs/nginx.conf
-  proxy_config:
-    file: ./configs/proxy.conf
-  dhparam_pem:
-    file: ./configs/dhparam.pem
-  crt_pem:
-    file: ./configs/inventory.crt
-  key_pem:
-    file: ./configs/inventory.key
 
 volumes:
   data:
+    name: "inventory-data"
 
 networks:
-  inventory: {}
-    
+  inventory:
+    name: "inventory-net"

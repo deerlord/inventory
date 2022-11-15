@@ -1,0 +1,4 @@
+location /inventory {
+  include       /etc/nginx/conf.d/proxy.conf;
+  proxy_pass    http://inventory/;
+}
