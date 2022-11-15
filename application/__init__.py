@@ -6,14 +6,13 @@ from sqlmodel import SQLModel
 from .lib import database
 from .router import crud_router, health
 from .settings import Settings
-import sqlalchemy
 
 
 def setup_application() -> FastAPI:
     settings = Settings()
     asyncio.run(init_database())
     debug = settings.log_level.upper() == "DEBUG"
-    app = FastAPI(debug=debug)
+    app = FastAPI(debug=debug, root_path="/inventory")
     top_router = crud_router()
     app.include_router(top_router)
     app.get("/health", tags=["Health"])(health.check)
