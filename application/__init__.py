@@ -12,7 +12,7 @@ def setup_application() -> FastAPI:
     settings = Settings()
     asyncio.run(init_database())
     debug = settings.log_level.upper() == "DEBUG"
-    app = FastAPI(debug=debug, root_path="/inventory")
+    app = FastAPI(debug=debug)
     top_router = crud_router()
     app.include_router(top_router)
     app.get("/health", tags=["Health"])(health.check)
