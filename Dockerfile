@@ -6,3 +6,4 @@ WORKDIR /opt
 RUN /opt/venv/bin/python -m pip install -U pip poetry
 RUN . /opt/venv/bin/activate && /opt/venv/bin/poetry install -E sqlite
 RUN /opt/venv/bin/pip install .
+CMD ["/opt/venv/bin/python", "/opt/application"]
