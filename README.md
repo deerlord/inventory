@@ -27,13 +27,6 @@ Then let `poetry` handle the dependencies for you. Currently, we only support po
 poetry install --no-dev [--extras pgsql]
 ```
 
-If you are running containers, you probably want to mount the code to the container, rather than writing it to the image. This will create the setup.py file and allow the mounted code to be used for the application without a re-install.
-```bash
-poetry build
-pip install -e .
-```
-
-
 ## Execution
 
 ### Environment File
